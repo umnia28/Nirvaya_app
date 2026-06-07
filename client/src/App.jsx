@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import SetupPage from "./pages/SetupPage";
 import SosPage from "./pages/SosPage";
-// import SafeRoutesPage from "./pages/SafeRoutesPage";
+import TrackingPage from "./pages/TrackingPage";  
+import SafeRoutesPage from "./pages/SafeRoutesPage";
 
 import { isSetupComplete } from "./services/localProfileService";
 
@@ -39,14 +40,16 @@ export default function App() {
           }
         />
 
-        {/* <Route
+        <Route
           path="/safe-routes"
           element={
             <SetupGuard>
               <SafeRoutesPage />
             </SetupGuard>
           }
-        /> */}
+        />
+
+        <Route path="/track/:publicToken" element={<TrackingPage />} />
       </Routes>
     </BrowserRouter>
   );

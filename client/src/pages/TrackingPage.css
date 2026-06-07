@@ -1,0 +1,219 @@
+.tracking-page {
+  min-height: 100vh;
+  background: #fdf1f4;
+  color: #130015;
+}
+
+.tracking-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 390px 1fr;
+}
+
+.tracking-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #ffe1e7;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.brand-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.brand-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #ed234f;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.brand-icon.danger {
+  margin: 0 auto 14px;
+}
+
+.brand-row h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.brand-row p {
+  margin: 5px 0 0;
+  color: #9a6a76;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-card,
+.info-card {
+  background: #fff7f8;
+  border: 1px solid #ffc9d4;
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-card.active {
+  background: #fff0f3;
+}
+
+.status-card.resolved {
+  background: #f0fff8;
+  border-color: #bdeed9;
+}
+
+.status-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ed234f;
+  box-shadow: 0 0 0 8px rgba(237, 35, 79, 0.12);
+}
+
+.status-card.resolved .status-dot {
+  background: #21a67a;
+  box-shadow: 0 0 0 8px rgba(33, 166, 122, 0.12);
+}
+
+.status-card h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.status-card p {
+  margin: 4px 0 0;
+  color: #9a6a76;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.info-label {
+  margin: 0;
+  color: #9a6a76;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.info-card h3 {
+  margin: 7px 0 0;
+  font-size: 17px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.info-muted {
+  margin: 6px 0 0;
+  color: #9a6a76;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.primary-button,
+.secondary-button {
+  width: 100%;
+  border-radius: 16px;
+  padding: 14px;
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #ed234f;
+  color: #ffffff;
+  border: none;
+}
+
+.secondary-button {
+  background: #fff0f3;
+  color: #ed234f;
+  border: 1px solid #ffc9d4;
+}
+
+.privacy-note {
+  color: #9a6a76;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 16px;
+}
+
+.tracking-map-panel {
+  min-height: 100vh;
+}
+
+.tracking-map {
+  width: 100%;
+  height: 100vh;
+}
+
+.center-card {
+  width: min(92vw, 440px);
+  background: #ffffff;
+  border: 1px solid #ffe1e7;
+  border-radius: 26px;
+  padding: 26px;
+  box-sizing: border-box;
+  text-align: center;
+  margin: 80px auto;
+}
+
+.center-card h1 {
+  margin: 12px 0 0;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.center-card p {
+  color: #9a6a76;
+  line-height: 1.5;
+}
+
+.loader {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #ffd1da;
+  border-top-color: #ed234f;
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 850px) {
+  .tracking-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tracking-sidebar {
+    border-right: none;
+    border-bottom: 1px solid #ffe1e7;
+  }
+
+  .tracking-map {
+    height: 60vh;
+  }
+}

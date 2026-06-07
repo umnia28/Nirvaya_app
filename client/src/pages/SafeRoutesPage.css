@@ -1,0 +1,246 @@
+.safe-routes-page {
+  min-height: 100vh;
+  background: #fdf1f4;
+  color: #130015;
+}
+
+.safe-routes-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 410px 1fr;
+}
+
+.safe-routes-panel {
+  background: #ffffff;
+  border-right: 1px solid #ffe1e7;
+  padding: 22px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.back-button {
+  border: none;
+  background: #fff0f3;
+  color: #ed234f;
+  border-radius: 999px;
+  padding: 9px 15px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+
+.brand-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.brand-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #ed234f;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.brand-row h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.brand-row p {
+  margin: 5px 0 0;
+  color: #9a6a76;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-card {
+  background: #fff7f8;
+  border: 1px solid #ffc9d4;
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.form-card label {
+  display: block;
+  color: #9a6a76;
+  font-weight: 800;
+  font-size: 13px;
+  margin: 12px 0 7px;
+}
+
+.form-card input,
+.form-card select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ffc9d4;
+  border-radius: 14px;
+  padding: 13px 14px;
+  color: #130015;
+  background: #ffffff;
+  outline: none;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.form-card input:focus,
+.form-card select:focus {
+  border-color: #ed234f;
+  box-shadow: 0 0 0 3px rgba(237, 35, 79, 0.08);
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.primary-button,
+.secondary-button {
+  flex: 1;
+  border-radius: 15px;
+  padding: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.primary-button {
+  background: #ed234f;
+  color: #ffffff;
+  border: none;
+}
+
+.secondary-button {
+  background: #ffffff;
+  color: #ed234f;
+  border: 1px solid #ed234f;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.small-text {
+  margin: 10px 0 0;
+  color: #9a6a76;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.error-text {
+  margin: 12px 0 0;
+  color: #d90429;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.route-list {
+  margin-top: 18px;
+}
+
+.route-list h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.route-note {
+  margin: 5px 0 10px;
+  color: #9a6a76;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.route-card {
+  width: 100%;
+  text-align: left;
+  background: #fff7f8;
+  border: 1px solid #ffc9d4;
+  border-radius: 16px;
+  padding: 14px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.route-card.active {
+  background: #fff0f3;
+  border-color: #ed234f;
+}
+
+.route-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rank-pill {
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.route-card strong {
+  color: #130015;
+}
+
+.route-card p {
+  margin: 9px 0 0;
+  color: #9a6a76;
+  font-weight: 700;
+}
+
+.route-card span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: #9a6a76;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.selected-route {
+  color: #ed234f;
+  font-weight: 900;
+  margin-top: 12px;
+}
+
+.safe-routes-map-panel {
+  min-height: 100vh;
+}
+
+.safe-routes-map {
+  width: 100%;
+  height: 100vh;
+}
+
+@media (max-width: 900px) {
+  .safe-routes-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .safe-routes-panel {
+    border-right: none;
+    border-bottom: 1px solid #ffe1e7;
+  }
+
+  .safe-routes-map {
+    height: 65vh;
+  }
+
+  .button-row {
+    flex-direction: column;
+  }
+}

@@ -1,6 +1,6 @@
 import axiosClient from "./axiosClient";
 
-export const getSafeRoutesApi = async ({
+export const getSafeAlternativeRoutesApi = async ({
   startLatitude,
   startLongitude,
   destination,
