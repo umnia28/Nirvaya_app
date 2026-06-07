@@ -1,0 +1,230 @@
+.setup-page {
+  min-height: 100vh;
+  background: #fdf1f4;
+  display: flex;
+  justify-content: center;
+  padding: 24px 14px;
+  box-sizing: border-box;
+}
+
+.setup-card {
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border: 1px solid #ffe1e7;
+  border-radius: 28px;
+  padding: 24px;
+  box-sizing: border-box;
+  box-shadow: 0 24px 60px rgba(237, 35, 79, 0.08);
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.brand-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #ed234f;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 22px;
+}
+
+.brand-row h1 {
+  margin: 0;
+  color: #130015;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.brand-row p {
+  margin: 4px 0 0;
+  color: #9a6a76;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.info-box {
+  background: #fff0f3;
+  border: 1px solid #ffc9d4;
+  border-radius: 18px;
+  padding: 14px;
+  color: #130015;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+
+.info-box span {
+  color: #9a6a76;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.form-section {
+  background: #fff7f8;
+  border: 1px solid #ffc9d4;
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.form-section h2 {
+  color: #130015;
+  font-size: 18px;
+  font-weight: 900;
+  margin: 0 0 14px;
+}
+
+.form-section label {
+  display: block;
+  color: #9a6a76;
+  font-weight: 800;
+  font-size: 13px;
+  margin: 12px 0 7px;
+}
+
+.form-section input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ffc9d4;
+  border-radius: 14px;
+  padding: 13px 14px;
+  color: #130015;
+  background: #ffffff;
+  outline: none;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.form-section input:focus {
+  border-color: #ed234f;
+  box-shadow: 0 0 0 3px rgba(237, 35, 79, 0.08);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.small-outline {
+  border: 1px solid #ed234f;
+  background: #ffffff;
+  color: #ed234f;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.contact-card {
+  background: #ffffff;
+  border: 1px solid #ffe1e7;
+  border-radius: 18px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.contact-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.contact-top strong {
+  color: #130015;
+}
+
+.delete-button {
+  border: none;
+  background: transparent;
+  color: #ed234f;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary-contact {
+  margin-top: 13px;
+  border: 1px solid #ffc9d4;
+  background: #fff7f8;
+  color: #9a6a76;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary-contact.active {
+  background: #21a67a;
+  border-color: #21a67a;
+  color: #ffffff;
+}
+
+.device-box {
+  margin-top: 16px;
+  background: #130015;
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.device-box span {
+  color: #ffc9d4;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.device-box code {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.primary-button,
+.secondary-button {
+  flex: 1;
+  border: none;
+  border-radius: 16px;
+  padding: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.primary-button {
+  background: #ed234f;
+  color: #ffffff;
+}
+
+.secondary-button {
+  background: #fff0f3;
+  color: #ed234f;
+  border: 1px solid #ffc9d4;
+}
+
+@media (max-width: 520px) {
+  .button-row {
+    flex-direction: column;
+  }
+
+  .setup-card {
+    padding: 18px;
+  }
+}
