@@ -63,10 +63,12 @@ const melFilterbank = (numFilters, fftSize, sampleRate) => {
     for (let k = 0; k < fftSize / 2 + 1; k++) {
       if (k >= binPoints[m - 1] && k <= binPoints[m]) {
         filter[k] =
-          (k - binPoints[m - 1]) / (binPoints[m] - binPoints[m - 1]);
+          (k - binPoints[m - 1]) /
+          (binPoints[m] - binPoints[m - 1] + 1e-10);
       } else if (k >= binPoints[m] && k <= binPoints[m + 1]) {
         filter[k] =
-          (binPoints[m + 1] - k) / (binPoints[m + 1] - binPoints[m]);
+          (binPoints[m + 1] - k) /
+          (binPoints[m + 1] - binPoints[m] + 1e-10);
       }
     }
     filterbank.push(filter);
@@ -99,7 +101,8 @@ const computeMFCC = (audioBuffer) => {
 
     const melEnergies = FILTERBANK.map((filter) => {
       let energy = 0;
-      for (let k = 0; k < filter.length; k++) energy += filter[k] * power[k];
+      for (let k = 0; k < filter.length; k++)
+        energy += filter[k] * power[k];
       return Math.log(energy + 1e-6);
     });
 
@@ -109,7 +112,9 @@ const computeMFCC = (audioBuffer) => {
       for (let j = 0; j < numMelFilters; j++) {
         sum +=
           melEnergies[j] *
-          Math.cos((Math.PI * i * (2 * j + 1)) / (2 * numMelFilters));
+          Math.cos(
+            (Math.PI * i * (2 * j + 1)) / (2 * numMelFilters)
+          );
       }
       mfcc[i] = sum;
     }
@@ -212,20 +217,42 @@ export default function SosPage() {
     };
   }, []);
 
-  // ─── Voice: inference ──────────────────────────────────────────────────
+  // ─── Voice: inference with debug ───────────────────────────────────────
   const runInference = useCallback(async (audioData) => {
     if (!modelRef.current) return;
     if (inferenceRunningRef.current) return;
     inferenceRunningRef.current = true;
 
     try {
+      // Debug audio levels
+      const maxVal = Math.max(
+        ...Array.from(audioData).map(Math.abs)
+      );
+      const avgVal =
+        Array.from(audioData).reduce((s, v) => s + Math.abs(v), 0) /
+        audioData.length;
+      console.log(
+        `Audio: max=${maxVal.toFixed(4)}, avg=${avgVal.toFixed(4)}, samples=${audioData.length}`
+      );
+
       const mfcc = computeMFCC(audioData);
+
+      // Debug MFCC values
+      const mfccFlat = mfcc.flatMap((f) => Array.from(f));
+      const mfccMax = Math.max(...mfccFlat.map(Math.abs));
+      const mfccAvg =
+        mfccFlat.reduce((s, v) => s + Math.abs(v), 0) / mfccFlat.length;
+      console.log(
+        `MFCC: max=${mfccMax.toFixed(4)}, avg=${mfccAvg.toFixed(4)}, frames=${mfcc.length}`
+      );
+
       const flat = [];
       for (let i = 0; i < N_FRAMES; i++) {
         for (let j = 0; j < N_MFCC; j++) {
           flat.push(mfcc[i][j]);
         }
       }
+
       const inputTensor = tf.tensor4d(flat, [1, N_FRAMES, N_MFCC, 1]);
       const prediction = modelRef.current.predict(inputTensor);
       const score = (await prediction.data())[0];
@@ -362,7 +389,9 @@ export default function SosPage() {
   const getCurrentLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error("Geolocation is not supported by this browser."));
+        reject(
+          new Error("Geolocation is not supported by this browser.")
+        );
         return;
       }
       navigator.geolocation.getCurrentPosition(
@@ -403,7 +432,10 @@ export default function SosPage() {
   };
 
   const showRiskNotification = ({ title, body }) => {
-    if ("Notification" in window && Notification.permission === "granted") {
+    if (
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       new Notification(title, { body, icon: "/favicon.ico" });
       return;
     }
@@ -413,7 +445,9 @@ export default function SosPage() {
   const playSosAlarm = () => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => console.log("Audio play blocked."));
+    audioRef.current
+      .play()
+      .catch(() => console.log("Audio play blocked."));
   };
 
   const stopSosAlarm = () => {
@@ -442,7 +476,9 @@ export default function SosPage() {
       });
       const data = await response.json();
       if (!response.ok || !data.success)
-        throw new Error(data.message || "Failed to check location risk.");
+        throw new Error(
+          data.message || "Failed to check location risk."
+        );
       setCurrentRisk(data.risk);
     } catch (error) {
       console.log("Initial risk check error:", error.message);
@@ -637,7 +673,9 @@ export default function SosPage() {
       });
       const data = await response.json();
       if (!response.ok || !data.success)
-        throw new Error(data.message || "Failed to update SOS location.");
+        throw new Error(
+          data.message || "Failed to update SOS location."
+        );
       console.log("SOS location updated:", data.location);
     } catch (error) {
       console.log("SOS location update error:", error.message);
@@ -725,13 +763,15 @@ export default function SosPage() {
     if (!currentRisk) return "Waiting for location check";
     if (currentRisk.message) return currentRisk.message;
     const score = currentRisk.risk_score ?? 0;
-    const district = currentRisk.district || selectedDistrict || "Unknown";
+    const district =
+      currentRisk.district || selectedDistrict || "Unknown";
     return `${district} • Score: ${Number(score).toFixed(1)}`;
   };
 
   const getRiskIconClass = () => {
     const level = currentRisk?.risk_level;
-    if (level === "critical" || level === "high") return "icon-red icon-danger";
+    if (level === "critical" || level === "high")
+      return "icon-red icon-danger";
     if (level === "medium") return "icon-red icon-medium";
     if (level === "low") return "icon-red icon-safe";
     return "icon-red";
@@ -869,7 +909,9 @@ export default function SosPage() {
           <div className="tracking-card">
             <div
               className={
-                normalTrackingEnabled ? "icon-red icon-safe" : "icon-light"
+                normalTrackingEnabled
+                  ? "icon-red icon-safe"
+                  : "icon-light"
               }
             />
             <div className="card-text-box">
@@ -882,7 +924,9 @@ export default function SosPage() {
             </div>
             <button
               className={
-                normalTrackingEnabled ? "toggle-button on" : "toggle-button"
+                normalTrackingEnabled
+                  ? "toggle-button on"
+                  : "toggle-button"
               }
               onClick={handleNormalTrackingToggle}
             >
@@ -893,7 +937,9 @@ export default function SosPage() {
           {/* ── Voice SOS card ───────────────────────────────────────── */}
           <div className="tracking-card">
             <div
-              className={voiceEnabled ? "icon-red icon-safe" : "icon-light"}
+              className={
+                voiceEnabled ? "icon-red icon-safe" : "icon-light"
+              }
             />
             <div className="card-text-box">
               <p className="card-title">Voice SOS — "সাহায্য করো"</p>
@@ -913,7 +959,9 @@ export default function SosPage() {
               )}
             </div>
             <button
-              className={voiceEnabled ? "toggle-button on" : "toggle-button"}
+              className={
+                voiceEnabled ? "toggle-button on" : "toggle-button"
+              }
               onClick={handleVoiceToggle}
               disabled={!voiceReady}
             >
