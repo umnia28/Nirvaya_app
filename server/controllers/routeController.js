@@ -34,25 +34,20 @@ const getBangladeshTimeInfo = () => {
 
 const haversineMeters = (lat1, lon1, lat2, lon2) => {
   const R = 6371000;
-
   const toRad = (deg) => (deg * Math.PI) / 180;
-
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) *
       Math.cos(toRad(lat2)) *
       Math.sin(dLon / 2) ** 2;
-
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
 const interpolatePoint = (start, end, fraction) => {
   const [lon1, lat1] = start;
   const [lon2, lat2] = end;
-
   return [
     lon1 + (lon2 - lon1) * fraction,
     lat1 + (lat2 - lat1) * fraction,
@@ -62,9 +57,7 @@ const interpolatePoint = (start, end, fraction) => {
 const sampleRouteEveryMeters = (coordinates, intervalMeters = 100) => {
   const sampled = [];
 
-  if (!coordinates || coordinates.length === 0) {
-    return sampled;
-  }
+  if (!coordinates || coordinates.length === 0) return sampled;
 
   sampled.push(coordinates[0]);
 
@@ -86,20 +79,17 @@ const sampleRouteEveryMeters = (coordinates, intervalMeters = 100) => {
     while (distanceSinceLastSample + segmentDistance >= intervalMeters) {
       const neededDistance = intervalMeters - distanceSinceLastSample;
       const fraction = neededDistance / segmentDistance;
-
       const sampledPoint = interpolatePoint(segmentStart, segmentEnd, fraction);
 
       sampled.push(sampledPoint);
 
       segmentStart = sampledPoint;
-
       segmentDistance = haversineMeters(
         segmentStart[1],
         segmentStart[0],
         segmentEnd[1],
         segmentEnd[0]
       );
-
       distanceSinceLastSample = 0;
     }
 
@@ -239,10 +229,12 @@ export const getSafeAlternativeRoutes = async (req, res) => {
       district = "Dhaka",
     } = req.body;
 
-    if (!start_latitude || !start_longitude || !destination) {
+    // FIX: use == null instead of ! to safely allow 0 coordinates
+    if (start_latitude == null || start_longitude == null || !destination) {
       return res.status(400).json({
         success: false,
-        message: "start_latitude, start_longitude, and destination are required",
+        message:
+          "start_latitude, start_longitude, and destination are required",
       });
     }
 
@@ -286,14 +278,11 @@ export const getSafeAlternativeRoutes = async (req, res) => {
 
     routes.forEach((route, routeIndex) => {
       const coordinates = route.geometry?.coordinates || [];
-
       const sampledCoordinates = sampleRouteEveryMeters(coordinates, 100);
-
       const startIndex = batchPoints.length;
 
       sampledCoordinates.forEach((coord) => {
         const [longitude, latitude] = coord;
-
         batchPoints.push({
           latitude,
           longitude,
@@ -318,47 +307,31 @@ export const getSafeAlternativeRoutes = async (req, res) => {
     const scoredRoutes = routes.map((route, index) => {
       const summary = route.properties?.summary || {};
       const group = routeSampleGroups[index];
-
       const routePredictions = allPredictions.slice(
         group.startIndex,
         group.endIndex
       );
-
       const risk = calculateRouteRiskFromPredictions(routePredictions);
 
       return {
         route_index: index + 1,
-
-        // Internal sorting values only.
-        // These will NOT be returned to frontend.
         _avg_risk_score: risk.avg_risk_score,
         _high_risk_points: risk.high_risk_points,
         _medium_risk_points: risk.medium_risk_points,
-
         distance_meters: summary.distance || null,
         duration_seconds: summary.duration || null,
         sampled_points_count: group.sampledCoordinates.length,
-
-        // ORS geometry format: [longitude, latitude]
-        // Frontend will use this to draw Polyline.
         geometry: route.geometry?.coordinates || [],
       };
     });
 
-    // Safest route first.
     scoredRoutes.sort((a, b) => {
-      if (a._avg_risk_score !== b._avg_risk_score) {
+      if (a._avg_risk_score !== b._avg_risk_score)
         return a._avg_risk_score - b._avg_risk_score;
-      }
-
-      if (a._high_risk_points !== b._high_risk_points) {
+      if (a._high_risk_points !== b._high_risk_points)
         return a._high_risk_points - b._high_risk_points;
-      }
-
-      if (a._medium_risk_points !== b._medium_risk_points) {
+      if (a._medium_risk_points !== b._medium_risk_points)
         return a._medium_risk_points - b._medium_risk_points;
-      }
-
       return (a.duration_seconds || 0) - (b.duration_seconds || 0);
     });
 
