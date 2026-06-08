@@ -79,7 +79,7 @@ const melFilterbank = (numFilters, fftSize, sampleRate) => {
 const FILTERBANK = melFilterbank(128, 512, SAMPLE_RATE);
 const HANNING = makeHanningWindow(512);
 
-// ─── MFCC ────────────────────────────────────────────────────────────────────
+// ─── MFCC with normalization ─────────────────────────────────────────────────
 const computeMFCC = (audioBuffer) => {
   const frameSize = 512;
   const hopSize = 256;
@@ -112,9 +112,7 @@ const computeMFCC = (audioBuffer) => {
       for (let j = 0; j < numMelFilters; j++) {
         sum +=
           melEnergies[j] *
-          Math.cos(
-            (Math.PI * i * (2 * j + 1)) / (2 * numMelFilters)
-          );
+          Math.cos((Math.PI * i * (2 * j + 1)) / (2 * numMelFilters));
       }
       mfcc[i] = sum;
     }
@@ -126,7 +124,21 @@ const computeMFCC = (audioBuffer) => {
     frames.push(new Float32Array(N_MFCC));
   }
 
-  return frames.slice(0, N_FRAMES);
+  const result = frames.slice(0, N_FRAMES);
+
+  // Normalize to zero mean and unit variance — matches Python training
+  const allValues = result.flatMap((f) => Array.from(f));
+  const mean =
+    allValues.reduce((s, v) => s + v, 0) / allValues.length;
+  const std =
+    Math.sqrt(
+      allValues.reduce((s, v) => s + (v - mean) ** 2, 0) /
+        allValues.length
+    ) + 1e-6;
+
+  return result.map((frame) =>
+    Float32Array.from(frame, (v) => (v - mean) / std)
+  );
 };
 
 export default function SosPage() {
@@ -217,33 +229,22 @@ export default function SosPage() {
     };
   }, []);
 
-  // ─── Voice: inference with debug ───────────────────────────────────────
+  // ─── Voice: inference ──────────────────────────────────────────────────
   const runInference = useCallback(async (audioData) => {
     if (!modelRef.current) return;
     if (inferenceRunningRef.current) return;
     inferenceRunningRef.current = true;
 
     try {
-      // Debug audio levels
-      const maxVal = Math.max(
-        ...Array.from(audioData).map(Math.abs)
-      );
-      const avgVal =
-        Array.from(audioData).reduce((s, v) => s + Math.abs(v), 0) /
-        audioData.length;
-      console.log(
-        `Audio: max=${maxVal.toFixed(4)}, avg=${avgVal.toFixed(4)}, samples=${audioData.length}`
-      );
-
       const mfcc = computeMFCC(audioData);
 
-      // Debug MFCC values
+      // Debug
       const mfccFlat = mfcc.flatMap((f) => Array.from(f));
       const mfccMax = Math.max(...mfccFlat.map(Math.abs));
       const mfccAvg =
         mfccFlat.reduce((s, v) => s + Math.abs(v), 0) / mfccFlat.length;
       console.log(
-        `MFCC: max=${mfccMax.toFixed(4)}, avg=${mfccAvg.toFixed(4)}, frames=${mfcc.length}`
+        `MFCC after norm: max=${mfccMax.toFixed(4)}, avg=${mfccAvg.toFixed(4)}`
       );
 
       const flat = [];
