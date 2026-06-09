@@ -1,10 +1,11 @@
 import crypto from "crypto";
 import pool from "../config/db.js";
 import { io } from "../index.js";
+import { generateEmergencyMessage } from "../utils/generateEmergencyMessage.js";
+import { generateIncidentReport } from "../utils/generateIncidentReport.js";
 
 const cleanEmergencyContacts = (contacts) => {
   if (!Array.isArray(contacts)) return [];
-
   return contacts
     .filter((contact) => contact?.phone)
     .map((contact) => ({
@@ -17,11 +18,7 @@ const cleanEmergencyContacts = (contacts) => {
 
 const buildTrackingLink = (publicToken) => {
   const clientUrl = process.env.CLIENT_URL;
-
-  if (!clientUrl) {
-    return `/track/${publicToken}`;
-  }
-
+  if (!clientUrl) return `/track/${publicToken}`;
   return `${clientUrl.replace(/\/$/, "")}/track/${publicToken}`;
 };
 
@@ -34,13 +31,14 @@ export const startSos = async (req, res) => {
 
   try {
     const deviceId = req.deviceId;
-
     const {
       latitude,
       longitude,
       trigger_type = "button",
       risk_score = null,
       emergency_contacts = [],
+      user_name = null,
+      district = "Dhaka",
     } = req.body;
 
     if (!deviceId) {
@@ -60,20 +58,14 @@ export const startSos = async (req, res) => {
     const contacts = cleanEmergencyContacts(emergency_contacts);
 
     const activeSosResult = await client.query(
-      `
-      SELECT *
-      FROM sos_alerts
-      WHERE device_id = $1
-        AND status = 'active'
-      ORDER BY created_at DESC
-      LIMIT 1
-      `,
+      `SELECT * FROM sos_alerts
+       WHERE device_id = $1 AND status = 'active'
+       ORDER BY created_at DESC LIMIT 1`,
       [deviceId]
     );
 
     if (activeSosResult.rows.length > 0) {
       const activeSos = activeSosResult.rows[0];
-
       return res.status(200).json({
         success: true,
         alreadyActive: true,
@@ -89,66 +81,31 @@ export const startSos = async (req, res) => {
     await client.query("BEGIN");
 
     const sosResult = await client.query(
-      `
-      INSERT INTO sos_alerts (
-        device_id,
-        trigger_type,
-        latitude,
-        longitude,
-        risk_score,
-        status,
-        public_token
-      )
-      VALUES ($1, $2, $3, $4, $5, 'active', $6)
-      RETURNING *
-      `,
-      [
-        deviceId,
-        trigger_type,
-        latitude,
-        longitude,
-        risk_score,
-        publicToken,
-      ]
+      `INSERT INTO sos_alerts (
+        device_id, trigger_type, latitude, longitude,
+        risk_score, status, public_token
+       ) VALUES ($1, $2, $3, $4, $5, 'active', $6)
+       RETURNING *`,
+      [deviceId, trigger_type, latitude, longitude, risk_score, publicToken]
     );
 
     const sos = sosResult.rows[0];
 
     await client.query(
-      `
-      INSERT INTO sos_location_updates (
-        sos_alert_id,
-        latitude,
-        longitude
-      )
-      VALUES ($1, $2, $3)
-      `,
+      `INSERT INTO sos_location_updates (sos_alert_id, latitude, longitude)
+       VALUES ($1, $2, $3)`,
       [sos.id, latitude, longitude]
     );
 
     const policeResult = await client.query(
-      `
-      SELECT
-        id,
-        name,
-        phone,
-        district,
-        thana,
-        latitude,
-        longitude,
-        (
-          6371000 * acos(
-            cos(radians($1)) *
-            cos(radians(latitude)) *
-            cos(radians(longitude) - radians($2)) +
-            sin(radians($1)) *
-            sin(radians(latitude))
-          )
-        ) AS distance_meters
-      FROM police_stations
-      ORDER BY distance_meters ASC
-      LIMIT 1
-      `,
+      `SELECT id, name, phone, district, thana, latitude, longitude,
+        (6371000 * acos(
+          cos(radians($1)) * cos(radians(latitude)) *
+          cos(radians(longitude) - radians($2)) +
+          sin(radians($1)) * sin(radians(latitude))
+        )) AS distance_meters
+       FROM police_stations
+       ORDER BY distance_meters ASC LIMIT 1`,
       [latitude, longitude]
     );
 
@@ -157,10 +114,30 @@ export const startSos = async (req, res) => {
     const trackingLink = buildTrackingLink(publicToken);
     const googleMapsLink = buildGoogleMapsLink(latitude, longitude);
 
-    const smsMessage = `Nirvaya SOS Alert! A user needs help. Live tracking: ${trackingLink}. Initial location: ${googleMapsLink}`;
+    // Generate AI emergency message
+    const riskLevel =
+      risk_score >= 8
+        ? "critical"
+        : risk_score >= 5
+        ? "high"
+        : risk_score >= 3
+        ? "medium"
+        : "low";
 
-    console.log("SMS Message:", smsMessage);
-    console.log("Emergency Contacts from frontend:", contacts);
+    const aiMessage = generateEmergencyMessage({
+      userName: user_name || "App User",
+      latitude,
+      longitude,
+      district,
+      riskLevel,
+      riskScore: risk_score,
+      trackingLink,
+      triggerType: trigger_type,
+      timestamp: new Date().toISOString(),
+    });
+
+    console.log("AI Emergency Message:\n", aiMessage);
+    console.log("Emergency Contacts:", contacts);
     console.log("Nearest Police:", policeResult.rows[0]);
 
     io.to(publicToken).emit("sos_started", {
@@ -178,16 +155,14 @@ export const startSos = async (req, res) => {
       trackingLink,
       googleMapsLink,
       emergency_contacts: contacts,
-      nearest_police_station: policeResult.rows[0],
-      smsMessage,
+      nearest_police_station: policeResult.rows[0] || null,
+      ai_message: aiMessage,
     });
   } catch (error) {
     try {
       await client.query("ROLLBACK");
     } catch {}
-
     console.error("Start SOS error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -202,7 +177,6 @@ export const updateSosLocation = async (req, res) => {
   try {
     const { sosId } = req.params;
     const deviceId = req.deviceId;
-
     const { latitude, longitude } = req.body;
 
     if (!deviceId) {
@@ -220,12 +194,8 @@ export const updateSosLocation = async (req, res) => {
     }
 
     const sosResult = await pool.query(
-      `
-      SELECT id, public_token, status
-      FROM sos_alerts
-      WHERE id = $1
-        AND device_id = $2
-      `,
+      `SELECT id, public_token, status FROM sos_alerts
+       WHERE id = $1 AND device_id = $2`,
       [sosId, deviceId]
     );
 
@@ -246,15 +216,9 @@ export const updateSosLocation = async (req, res) => {
     }
 
     const locationResult = await pool.query(
-      `
-      INSERT INTO sos_location_updates (
-        sos_alert_id,
-        latitude,
-        longitude
-      )
-      VALUES ($1, $2, $3)
-      RETURNING latitude, longitude, recorded_at
-      `,
+      `INSERT INTO sos_location_updates (sos_alert_id, latitude, longitude)
+       VALUES ($1, $2, $3)
+       RETURNING latitude, longitude, recorded_at`,
       [sosId, latitude, longitude]
     );
 
@@ -273,7 +237,6 @@ export const updateSosLocation = async (req, res) => {
     });
   } catch (error) {
     console.error("Update SOS location error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -287,25 +250,16 @@ export const getTrackingLocation = async (req, res) => {
     const { publicToken } = req.params;
 
     const result = await pool.query(
-      `
-      SELECT
-        sa.id,
-        sa.status,
-        sa.created_at,
-        sa.resolved_at,
-        slu.latitude,
-        slu.longitude,
-        slu.recorded_at
-      FROM sos_alerts sa
-      JOIN LATERAL (
-        SELECT latitude, longitude, recorded_at
-        FROM sos_location_updates
-        WHERE sos_alert_id = sa.id
-        ORDER BY recorded_at DESC
-        LIMIT 1
-      ) slu ON true
-      WHERE sa.public_token = $1
-      `,
+      `SELECT sa.id, sa.status, sa.created_at, sa.resolved_at,
+        slu.latitude, slu.longitude, slu.recorded_at
+       FROM sos_alerts sa
+       JOIN LATERAL (
+         SELECT latitude, longitude, recorded_at
+         FROM sos_location_updates
+         WHERE sos_alert_id = sa.id
+         ORDER BY recorded_at DESC LIMIT 1
+       ) slu ON true
+       WHERE sa.public_token = $1`,
       [publicToken]
     );
 
@@ -322,7 +276,6 @@ export const getTrackingLocation = async (req, res) => {
     });
   } catch (error) {
     console.error("Get tracking error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -344,15 +297,10 @@ export const resolveSos = async (req, res) => {
     }
 
     const result = await pool.query(
-      `
-      UPDATE sos_alerts
-      SET status = 'resolved',
-          resolved_at = NOW()
-      WHERE id = $1
-        AND device_id = $2
-        AND status = 'active'
-      RETURNING *
-      `,
+      `UPDATE sos_alerts
+       SET status = 'resolved', resolved_at = NOW()
+       WHERE id = $1 AND device_id = $2 AND status = 'active'
+       RETURNING *`,
       [sosId, deviceId]
     );
 
@@ -377,10 +325,66 @@ export const resolveSos = async (req, res) => {
     });
   } catch (error) {
     console.error("Resolve SOS error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+export const getIncidentReport = async (req, res) => {
+  try {
+    const { sosId } = req.params;
+    const deviceId = req.deviceId;
+
+    const sosResult = await pool.query(
+      `SELECT * FROM sos_alerts
+       WHERE id = $1 AND device_id = $2`,
+      [sosId, deviceId]
+    );
+
+    if (sosResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "SOS not found",
+      });
+    }
+
+    const sos = sosResult.rows[0];
+
+    const locationResult = await pool.query(
+      `SELECT latitude, longitude, recorded_at
+       FROM sos_location_updates
+       WHERE sos_alert_id = $1
+       ORDER BY recorded_at ASC`,
+      [sosId]
+    );
+
+    const trackingLink = buildTrackingLink(sos.public_token);
+
+    const report = generateIncidentReport({
+      userName: sos.user_name || "App User",
+      sosId: sos.id,
+      startTime: sos.created_at,
+      endTime: sos.resolved_at || new Date().toISOString(),
+      district: sos.district || "Dhaka",
+      locationHistory: locationResult.rows || [],
+      riskScore: sos.risk_score,
+      triggerType: sos.trigger_type,
+      trackingLink,
+    });
+
+    return res.status(200).json({
+      success: true,
+      report,
+      generated_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Incident report error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate incident report",
       error: error.message,
     });
   }

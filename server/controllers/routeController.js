@@ -13,23 +13,17 @@ const getBangladeshTimeInfo = () => {
     hour12: false,
   }).formatToParts(new Date());
 
-  const hour = Number(parts.find((part) => part.type === "hour")?.value || 12);
+  const hour = Number(
+    parts.find((part) => part.type === "hour")?.value || 12
+  );
   const weekday = parts.find((part) => part.type === "weekday")?.value;
 
   const weekdayMap = {
-    Mon: 0,
-    Tue: 1,
-    Wed: 2,
-    Thu: 3,
-    Fri: 4,
-    Sat: 5,
-    Sun: 6,
+    Mon: 0, Tue: 1, Wed: 2, Thu: 3,
+    Fri: 4, Sat: 5, Sun: 6,
   };
 
-  return {
-    hour,
-    day_of_week: weekdayMap[weekday] ?? 0,
-  };
+  return { hour, day_of_week: weekdayMap[weekday] ?? 0 };
 };
 
 const haversineMeters = (lat1, lon1, lat2, lon2) => {
@@ -56,11 +50,9 @@ const interpolatePoint = (start, end, fraction) => {
 
 const sampleRouteEveryMeters = (coordinates, intervalMeters = 100) => {
   const sampled = [];
-
   if (!coordinates || coordinates.length === 0) return sampled;
 
   sampled.push(coordinates[0]);
-
   let distanceSinceLastSample = 0;
 
   for (let i = 1; i < coordinates.length; i++) {
@@ -68,10 +60,8 @@ const sampleRouteEveryMeters = (coordinates, intervalMeters = 100) => {
     const segmentEnd = coordinates[i];
 
     let segmentDistance = haversineMeters(
-      segmentStart[1],
-      segmentStart[0],
-      segmentEnd[1],
-      segmentEnd[0]
+      segmentStart[1], segmentStart[0],
+      segmentEnd[1], segmentEnd[0]
     );
 
     if (segmentDistance === 0) continue;
@@ -79,16 +69,14 @@ const sampleRouteEveryMeters = (coordinates, intervalMeters = 100) => {
     while (distanceSinceLastSample + segmentDistance >= intervalMeters) {
       const neededDistance = intervalMeters - distanceSinceLastSample;
       const fraction = neededDistance / segmentDistance;
-      const sampledPoint = interpolatePoint(segmentStart, segmentEnd, fraction);
-
+      const sampledPoint = interpolatePoint(
+        segmentStart, segmentEnd, fraction
+      );
       sampled.push(sampledPoint);
-
       segmentStart = sampledPoint;
       segmentDistance = haversineMeters(
-        segmentStart[1],
-        segmentStart[0],
-        segmentEnd[1],
-        segmentEnd[0]
+        segmentStart[1], segmentStart[0],
+        segmentEnd[1], segmentEnd[0]
       );
       distanceSinceLastSample = 0;
     }
@@ -119,25 +107,19 @@ const geocodeDestination = async (destination) => {
 
   const response = await fetch(
     `${ORS_BASE_URL}/geocode/search?${params.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: ORS_API_KEY,
-      },
-    }
+    { method: "GET", headers: { Authorization: ORS_API_KEY } }
   );
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data?.error?.message || "Destination geocoding failed");
+    throw new Error(
+      data?.error?.message || "Destination geocoding failed"
+    );
   }
 
   const feature = data?.features?.[0];
-
-  if (!feature) {
-    throw new Error("Destination not found");
-  }
+  if (!feature) throw new Error("Destination not found");
 
   const [longitude, latitude] = feature.geometry.coordinates;
 
@@ -180,7 +162,9 @@ const getAlternativeRoutes = async ({
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data?.error?.message || "Failed to get alternative routes");
+    throw new Error(
+      data?.error?.message || "Failed to get alternative routes"
+    );
   }
 
   return data?.features || [];
@@ -188,16 +172,13 @@ const getAlternativeRoutes = async ({
 
 const calculateRouteRiskFromPredictions = (predictions) => {
   if (!predictions.length) {
-    return {
-      avg_risk_score: 0,
-      high_risk_points: 0,
-      medium_risk_points: 0,
-    };
+    return { avg_risk_score: 0, high_risk_points: 0, medium_risk_points: 0 };
   }
 
-  const totalRisk = predictions.reduce((sum, item) => {
-    return sum + Number(item.risk_score || 0);
-  }, 0);
+  const totalRisk = predictions.reduce(
+    (sum, item) => sum + Number(item.risk_score || 0),
+    0
+  );
 
   const avgRiskScore = totalRisk / predictions.length;
 
@@ -229,7 +210,6 @@ export const getSafeAlternativeRoutes = async (req, res) => {
       district = "Dhaka",
     } = req.body;
 
-    // FIX: use == null instead of ! to safely allow 0 coordinates
     if (start_latitude == null || start_longitude == null || !destination) {
       return res.status(400).json({
         success: false,
@@ -272,7 +252,6 @@ export const getSafeAlternativeRoutes = async (req, res) => {
     }
 
     const { hour, day_of_week } = getBangladeshTimeInfo();
-
     const routeSampleGroups = [];
     const batchPoints = [];
 
@@ -284,21 +263,13 @@ export const getSafeAlternativeRoutes = async (req, res) => {
       sampledCoordinates.forEach((coord) => {
         const [longitude, latitude] = coord;
         batchPoints.push({
-          latitude,
-          longitude,
-          district,
-          hour,
-          day_of_week,
+          latitude, longitude, district, hour, day_of_week,
         });
       });
 
       const endIndex = batchPoints.length;
-
       routeSampleGroups.push({
-        routeIndex,
-        startIndex,
-        endIndex,
-        sampledCoordinates,
+        routeIndex, startIndex, endIndex, sampledCoordinates,
       });
     });
 
@@ -308,8 +279,7 @@ export const getSafeAlternativeRoutes = async (req, res) => {
       const summary = route.properties?.summary || {};
       const group = routeSampleGroups[index];
       const routePredictions = allPredictions.slice(
-        group.startIndex,
-        group.endIndex
+        group.startIndex, group.endIndex
       );
       const risk = calculateRouteRiskFromPredictions(routePredictions);
 
@@ -358,17 +328,13 @@ export const getSafeAlternativeRoutes = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Alternative routes ranked by safety",
-      start: {
-        latitude: startLatitude,
-        longitude: startLongitude,
-      },
+      start: { latitude: startLatitude, longitude: startLongitude },
       destination: destinationData,
       checked_points_count: batchPoints.length,
       routes: rankedRoutes,
     });
   } catch (error) {
     console.error("Safe alternative route error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to generate safe alternative routes",

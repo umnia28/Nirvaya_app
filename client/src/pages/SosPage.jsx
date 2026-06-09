@@ -13,6 +13,9 @@ import "./SosPage.css";
 const ACTIVE_SOS_KEY = "nirvaya_active_sos";
 const COOLDOWN_MS = 15000;
 const COUNTDOWN_SECONDS = 3;
+const STATIONARY_CHECK_MS = 60000;
+const STATIONARY_THRESHOLD_METERS = 30;
+const STATIONARY_DANGER_MINUTES = 10;
 
 const normalizeText = (text) =>
   text.toLowerCase().trim().replace(/\s+/g, " ");
@@ -41,6 +44,11 @@ export default function SosPage() {
   const lastTriggerRef = useRef(0);
   const restartTimeoutRef = useRef(null);
 
+  const stationaryCheckIntervalRef = useRef(null);
+  const stationaryStartTimeRef = useRef(null);
+  const lastMovementLocationRef = useRef(null);
+  const responseTimeoutRef = useRef(null);
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -57,6 +65,15 @@ export default function SosPage() {
   const [voiceCountdown, setVoiceCountdown] = useState(null);
   const [voiceError, setVoiceError] = useState("");
   const [lastTranscript, setLastTranscript] = useState("");
+
+  const [safetyPromptVisible, setSafetyPromptVisible] = useState(false);
+  const [safetyPromptCountdown, setSafetyPromptCountdown] = useState(120);
+
+  const [safeHours, setSafeHours] = useState(null);
+  const [safeHoursLoading, setSafeHoursLoading] = useState(false);
+
+  const [incidentReport, setIncidentReport] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     if (
@@ -91,6 +108,7 @@ export default function SosPage() {
       stopSosLocationUpdates();
       stopNormalLocationTracking();
       stopVoiceListening();
+      stopStationaryMonitoring();
     };
   }, []);
 
@@ -111,8 +129,8 @@ export default function SosPage() {
     recognition.maxAlternatives = 3;
 
     recognition.onstart = () => {
-      console.log("Voice SOS listening started.");
       setVoiceError("");
+      console.log("Voice SOS listening started.");
     };
 
     recognition.onresult = (event) => {
@@ -121,11 +139,7 @@ export default function SosPage() {
         for (let j = 0; j < result.length; j++) {
           const transcript = result[j].transcript;
           setLastTranscript(transcript);
-          console.log(
-            `Speech: "${transcript}" (${
-              result.isFinal ? "final" : "interim"
-            })`
-          );
+          console.log(`Speech: "${transcript}"`);
 
           if (containsKeyword(transcript)) {
             const now = Date.now();
@@ -140,7 +154,6 @@ export default function SosPage() {
     };
 
     recognition.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
       if (event.error === "not-allowed") {
         setVoiceError("Microphone access denied.");
         setVoiceEnabled(false);
@@ -162,11 +175,9 @@ export default function SosPage() {
     };
 
     recognitionRef.current = recognition;
-
     try {
       recognition.start();
     } catch (err) {
-      console.error("Failed to start recognition:", err);
       setVoiceError("Failed to start voice recognition.");
     }
   }, []);
@@ -181,7 +192,6 @@ export default function SosPage() {
       } catch (_) {}
       recognitionRef.current = null;
     }
-    console.log("Voice SOS listening stopped.");
   }, []);
 
   const handleVoiceToggle = () => {
@@ -201,14 +211,12 @@ export default function SosPage() {
   const startVoiceCountdown = useCallback(() => {
     if (countdownActiveRef.current) return;
     countdownActiveRef.current = true;
-
     let remaining = COUNTDOWN_SECONDS;
     setVoiceCountdown(remaining);
 
     countdownTimerRef.current = setInterval(() => {
       remaining -= 1;
       setVoiceCountdown(remaining);
-
       if (remaining <= 0) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
@@ -226,24 +234,156 @@ export default function SosPage() {
     setVoiceCountdown(null);
   };
 
+  const startStationaryMonitoring = useCallback(() => {
+    if (stationaryCheckIntervalRef.current) return;
+
+    stationaryCheckIntervalRef.current = setInterval(async () => {
+      try {
+        const location = await getCurrentLocation();
+        const riskLevel = currentRisk?.risk_level;
+        const isHighRisk =
+          riskLevel === "high" || riskLevel === "critical";
+
+        if (!isHighRisk) {
+          stationaryStartTimeRef.current = null;
+          lastMovementLocationRef.current = location;
+          return;
+        }
+
+        const distance = calculateDistanceMeters(
+          lastMovementLocationRef.current,
+          location
+        );
+
+        if (distance < STATIONARY_THRESHOLD_METERS) {
+          if (!stationaryStartTimeRef.current) {
+            stationaryStartTimeRef.current = Date.now();
+          }
+          const stationaryMinutes =
+            (Date.now() - stationaryStartTimeRef.current) / 60000;
+
+          if (
+            stationaryMinutes >= STATIONARY_DANGER_MINUTES &&
+            !safetyPromptVisible
+          ) {
+            triggerSafetyPrompt();
+          }
+        } else {
+          stationaryStartTimeRef.current = null;
+          lastMovementLocationRef.current = location;
+        }
+      } catch (err) {
+        console.log("Stationary check error:", err.message);
+      }
+    }, STATIONARY_CHECK_MS);
+  }, [currentRisk, safetyPromptVisible]);
+
+  const stopStationaryMonitoring = () => {
+    if (stationaryCheckIntervalRef.current) {
+      clearInterval(stationaryCheckIntervalRef.current);
+      stationaryCheckIntervalRef.current = null;
+    }
+    clearInterval(responseTimeoutRef.current);
+    stationaryStartTimeRef.current = null;
+  };
+
+  const triggerSafetyPrompt = () => {
+    setSafetyPromptVisible(true);
+    let countdown = 120;
+    setSafetyPromptCountdown(countdown);
+
+    responseTimeoutRef.current = setInterval(() => {
+      countdown -= 1;
+      setSafetyPromptCountdown(countdown);
+      if (countdown <= 0) {
+        clearInterval(responseTimeoutRef.current);
+        setSafetyPromptVisible(false);
+        stationaryStartTimeRef.current = null;
+        handleSosPress("auto_stationary");
+      }
+    }, 1000);
+  };
+
+  const confirmSafe = () => {
+    clearInterval(responseTimeoutRef.current);
+    setSafetyPromptVisible(false);
+    stationaryStartTimeRef.current = null;
+    setSafetyPromptCountdown(120);
+  };
+
+  const fetchSafeHours = async () => {
+    if (!currentCoords) return;
+    try {
+      setSafeHoursLoading(true);
+      const deviceId = getOrCreateDeviceId();
+      const response = await fetch(`${API_URL}/location/safe-hours`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-device-id": deviceId,
+        },
+        body: JSON.stringify({
+          latitude: currentCoords.latitude,
+          longitude: currentCoords.longitude,
+          district: selectedDistrict,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) setSafeHours(data);
+    } catch (err) {
+      console.log("Safe hours error:", err.message);
+    } finally {
+      setSafeHoursLoading(false);
+    }
+  };
+
+  const generateReport = async (sosId) => {
+    try {
+      setReportLoading(true);
+      const deviceId = getOrCreateDeviceId();
+      const response = await fetch(
+        `${API_URL}/sos/${sosId}/incident-report`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-device-id": deviceId,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.success) setIncidentReport(data.report);
+    } catch (err) {
+      console.log("Report error:", err.message);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const copyReport = async () => {
+    if (!incidentReport) return;
+    try {
+      await navigator.clipboard.writeText(incidentReport);
+      alert("Report copied to clipboard.");
+    } catch {
+      alert(incidentReport);
+    }
+  };
+
   const getCurrentLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(
-          new Error("Geolocation is not supported by this browser.")
-        );
+        reject(new Error("Geolocation not supported."));
         return;
       }
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        (pos) =>
           resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => {
-          reject(new Error(error.message || "Failed to get location."));
-        },
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }),
+        (err) =>
+          reject(new Error(err.message || "Failed to get location.")),
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     });
@@ -285,9 +425,7 @@ export default function SosPage() {
   const playSosAlarm = () => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    audioRef.current
-      .play()
-      .catch(() => console.log("Audio play blocked."));
+    audioRef.current.play().catch(() => {});
   };
 
   const stopSosAlarm = () => {
@@ -316,12 +454,10 @@ export default function SosPage() {
       });
       const data = await response.json();
       if (!response.ok || !data.success)
-        throw new Error(
-          data.message || "Failed to check location risk."
-        );
+        throw new Error(data.message || "Failed to check risk.");
       setCurrentRisk(data.risk);
     } catch (error) {
-      console.log("Initial risk check error:", error.message);
+      console.log("Risk check error:", error.message);
       setCurrentRisk({
         risk_level: "unknown",
         risk_score: 0,
@@ -355,14 +491,13 @@ export default function SosPage() {
       setCurrentRisk(data.risk);
       maybeNotifyHighRisk({ risk: data.risk, location });
     } catch (error) {
-      console.log("Normal location update error:", error.message);
+      console.log("Location update error:", error.message);
     }
   };
 
   const maybeNotifyHighRisk = ({ risk, location }) => {
     const level = risk?.risk_level;
-    const isHighRisk = level === "high" || level === "critical";
-    if (!isHighRisk) return;
+    if (level !== "high" && level !== "critical") return;
     const now = Date.now();
     const fiveMinutesPassed =
       now - lastRiskAlertTimeRef.current >= 5 * 60 * 1000;
@@ -370,11 +505,10 @@ export default function SosPage() {
       lastRiskAlertLocationRef.current,
       location
     );
-    const movedAtLeast50Meters = movedDistance >= 50;
     const shouldNotify =
       lastRiskAlertTimeRef.current === 0 ||
       fiveMinutesPassed ||
-      movedAtLeast50Meters;
+      movedDistance >= 50;
     if (!shouldNotify) return;
     lastRiskAlertTimeRef.current = now;
     lastRiskAlertLocationRef.current = location;
@@ -383,7 +517,7 @@ export default function SosPage() {
         level === "critical"
           ? "Critical Risk Zone Alert"
           : "High Risk Zone Alert",
-      body: `You are currently in a ${level} risk area. Stay alert and consider using a safer route.`,
+      body: `You are in a ${level} risk area. Stay alert.`,
     });
   };
 
@@ -394,11 +528,13 @@ export default function SosPage() {
         clearInterval(normalTrackingIntervalRef.current);
       setNormalTrackingEnabled(true);
       await sendNormalLocationUpdateOnce();
-      normalTrackingIntervalRef.current = setInterval(() => {
-        sendNormalLocationUpdateOnce();
-      }, 60000);
+      normalTrackingIntervalRef.current = setInterval(
+        sendNormalLocationUpdateOnce,
+        60000
+      );
+      startStationaryMonitoring();
       alert(
-        "Live safety tracking started. Nirvaya will check your location every 1 minute while this page is open."
+        "Live safety tracking started. Nirvaya will check your location every 1 minute."
       );
     } catch (error) {
       setNormalTrackingEnabled(false);
@@ -411,6 +547,7 @@ export default function SosPage() {
       clearInterval(normalTrackingIntervalRef.current);
       normalTrackingIntervalRef.current = null;
     }
+    stopStationaryMonitoring();
     setNormalTrackingEnabled(false);
   };
 
@@ -465,17 +602,20 @@ export default function SosPage() {
       startSosLocationUpdates(data.sos.id);
       playSosAlarm();
 
-      if (data.alreadyActive) {
-        alert(
-          "SOS is already active. Nirvaya will continue updating your live location."
-        );
-      } else {
-        alert(
-          triggerType === "voice"
-            ? "Voice SOS sent. Your emergency contacts can track your location."
-            : "SOS sent. Your emergency contacts can use the tracking link to follow your location."
-        );
-      }
+      const triggerMessages = {
+        voice:
+          "Voice SOS sent. Your emergency contacts can track your location.",
+        auto_stationary:
+          "AI detected you were stationary in a danger zone. SOS has been sent automatically.",
+        button:
+          "SOS sent. Your emergency contacts can use the tracking link to follow your location.",
+      };
+
+      alert(
+        data.alreadyActive
+          ? "SOS is already active. Nirvaya will continue updating your live location."
+          : triggerMessages[triggerType] || triggerMessages.button
+      );
     } catch (error) {
       console.error("SOS error:", error.message);
       alert(error.message);
@@ -489,9 +629,10 @@ export default function SosPage() {
     if (sosUpdateIntervalRef.current)
       clearInterval(sosUpdateIntervalRef.current);
     sendSosLocationUpdateOnce(sosId);
-    sosUpdateIntervalRef.current = setInterval(() => {
-      sendSosLocationUpdateOnce(sosId);
-    }, 30000);
+    sosUpdateIntervalRef.current = setInterval(
+      () => sendSosLocationUpdateOnce(sosId),
+      30000
+    );
   };
 
   const sendSosLocationUpdateOnce = async (sosId) => {
@@ -540,8 +681,10 @@ export default function SosPage() {
     try {
       setResolving(true);
       const deviceId = getOrCreateDeviceId();
+      const resolvedSosId = activeSos.id;
+
       const response = await fetch(
-        `${API_URL}/sos/${activeSos.id}/resolve`,
+        `${API_URL}/sos/${resolvedSosId}/resolve`,
         {
           method: "PATCH",
           headers: {
@@ -553,12 +696,15 @@ export default function SosPage() {
       const data = await response.json();
       if (!response.ok || !data.success)
         throw new Error(data.message || "Failed to resolve SOS.");
+
       stopSosLocationUpdates();
       stopSosAlarm();
       setActiveSos(null);
       setTrackingLink("");
       localStorage.removeItem(ACTIVE_SOS_KEY);
       alert("SOS resolved. Live location updates have stopped.");
+
+      generateReport(resolvedSosId);
     } catch (error) {
       alert(error.message);
     } finally {
@@ -679,6 +825,31 @@ export default function SosPage() {
             </button>
           )}
 
+          {/* ── AI stationary safety prompt ──────────────────────────── */}
+          {safetyPromptVisible && (
+            <div
+              className="tracking-card"
+              style={{ borderColor: "#FF9900", background: "#fff8f0" }}
+            >
+              <div className="icon-red icon-medium" />
+              <div className="card-text-box">
+                <p className="location-label">Are you safe?</p>
+                <p className="location-text">
+                  You have been stationary in a high-risk zone for over
+                  10 minutes.
+                </p>
+                <p className="zone-text">
+                  SOS triggers automatically in{" "}
+                  {safetyPromptCountdown}s.
+                </p>
+              </div>
+              <button className="small-button" onClick={confirmSafe}>
+                I'm Safe
+              </button>
+            </div>
+          )}
+
+          {/* ── Voice countdown overlay ──────────────────────────────── */}
           {voiceCountdown !== null && (
             <div
               className="tracking-card"
@@ -716,6 +887,58 @@ export default function SosPage() {
               <button className="small-button" onClick={copyTrackingLink}>
                 Copy
               </button>
+            </div>
+          )}
+
+          {/* ── AI incident report ───────────────────────────────────── */}
+          {reportLoading && (
+            <div className="tracking-card">
+              <span className="mini-loader" />
+              <div className="card-text-box">
+                <p className="card-subtitle">
+                  Generating AI incident report...
+                </p>
+              </div>
+            </div>
+          )}
+
+          {incidentReport && (
+            <div
+              className="tracking-card"
+              style={{ flexDirection: "column", gap: "8px" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <div className="icon-red icon-safe" />
+                <div className="card-text-box">
+                  <p className="card-title">AI incident report ready</p>
+                  <p className="card-subtitle">
+                    Auto-generated for law enforcement submission.
+                  </p>
+                </div>
+                <button className="small-button" onClick={copyReport}>
+                  Copy
+                </button>
+              </div>
+              <div
+                style={{
+                  background: "var(--color-background-secondary)",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  fontSize: "12px",
+                  color: "var(--color-text-secondary)",
+                  whiteSpace: "pre-wrap",
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                }}
+              >
+                {incidentReport}
+              </div>
             </div>
           )}
 
@@ -772,6 +995,33 @@ export default function SosPage() {
             </button>
           </div>
 
+          {/* ── AI safe hour predictor ───────────────────────────────── */}
+          <div className="tracking-card">
+            <div className="icon-light" />
+            <div className="card-text-box">
+              <p className="card-title">AI safe hour predictor</p>
+              <p className="card-subtitle">
+                {safeHoursLoading
+                  ? "Analyzing next 12 hours..."
+                  : safeHours?.recommendation
+                  ? safeHours.recommendation
+                  : "Tap to find the safest time to travel"}
+              </p>
+            </div>
+            {safeHoursLoading ? (
+              <span className="mini-loader" />
+            ) : (
+              <button
+                className="small-button"
+                onClick={fetchSafeHours}
+                disabled={!currentCoords}
+              >
+                {safeHours ? "↻" : "Check"}
+              </button>
+            )}
+          </div>
+
+          {/* ── Voice SOS card ───────────────────────────────────────── */}
           <div className="tracking-card">
             <div
               className={
