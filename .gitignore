@@ -1,1 +1,7 @@
 .env
+venv_tflite/
+venv/
+__pycache__/
+*.pyc
+**/Lib/site-packages/
+
