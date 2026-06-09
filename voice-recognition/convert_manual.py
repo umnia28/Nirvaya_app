@@ -4,18 +4,17 @@ import json, os, numpy as np
 print("TF version:", tf.__version__)
 print("Loading model...")
 
-# Rebuild the same architecture
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(64, 40, 1)),
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu'),
+    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
 
-    tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
 
-    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+    tf.keras.layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
     tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
 
@@ -28,8 +27,6 @@ model = tf.keras.Sequential([
 ])
 
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-
-# Load weights from the trained model
 model.load_weights("keyword_model.h5")
 print("Weights loaded successfully.")
 

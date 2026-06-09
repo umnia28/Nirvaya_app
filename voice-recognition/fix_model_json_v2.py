@@ -1,13 +1,10 @@
-# fix_model_json_v2.py
 import json
 
 with open("keyword_model_tfjs/model.json", "r") as f:
     original = json.load(f)
 
-# Get weights manifest
 weights_manifest = original["weightsManifest"]
 
-# Fix weight names
 weight_name_map = {
     "conv2d/weight_0": "conv2d/kernel",
     "conv2d/weight_1": "conv2d/bias",
@@ -40,7 +37,6 @@ for manifest in weights_manifest:
         if w["name"] in weight_name_map:
             w["name"] = weight_name_map[w["name"]]
 
-# Build clean TF.js compatible model topology
 tfjs_model = {
     "modelTopology": {
         "keras_version": "2.15.0",
@@ -60,7 +56,7 @@ tfjs_model = {
                             "filters": 32,
                             "kernel_size": [3, 3],
                             "strides": [1, 1],
-                            "padding": "valid",
+                            "padding": "same",
                             "data_format": "channels_last",
                             "dilation_rate": [1, 1],
                             "activation": "relu",
@@ -101,7 +97,7 @@ tfjs_model = {
                             "filters": 64,
                             "kernel_size": [3, 3],
                             "strides": [1, 1],
-                            "padding": "valid",
+                            "padding": "same",
                             "data_format": "channels_last",
                             "dilation_rate": [1, 1],
                             "activation": "relu",
@@ -142,7 +138,7 @@ tfjs_model = {
                             "filters": 128,
                             "kernel_size": [3, 3],
                             "strides": [1, 1],
-                            "padding": "valid",
+                            "padding": "same",
                             "data_format": "channels_last",
                             "dilation_rate": [1, 1],
                             "activation": "relu",

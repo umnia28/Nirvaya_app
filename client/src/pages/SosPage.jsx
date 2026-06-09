@@ -11,30 +11,54 @@ import {
 
 import "./SosPage.css";
 
+// ─── Constants ───────────────────────────────────────────────────────────────
 const ACTIVE_SOS_KEY = "nirvaya_active_sos";
 const SAMPLE_RATE = 16000;
 const DURATION = 2;
-const N_MFCC = 40;
+const N_MELS = 40;
 const N_FRAMES = 64;
-const THRESHOLD = 0.60;
+const NORM_MEAN = -5.2503;
+const NORM_STD = 3.9637;
+const THRESHOLD = 0.75;
 const COOLDOWN_MS = 15000;
 const COUNTDOWN_SECONDS = 3;
+const FRAME_SIZE = 512;
+const HOP_SIZE = 256;
 
-// ─── Hanning window ──────────────────────────────────────────────────────────
-const makeHanningWindow = (size) => {
-  const w = new Float32Array(size);
-  for (let i = 0; i < size; i++) {
-    w[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (size - 1)));
+// ─── Mel filterbank (matches Python training exactly) ────────────────────────
+const makeMelFilterbank = (nMels, fftSize, sampleRate) => {
+  const melMin = 2595 * Math.log10(1 + 80 / 700);
+  const melMax = 2595 * Math.log10(1 + sampleRate / 2 / 700);
+  const melPoints = Array.from({ length: nMels + 2 }, (_, i) =>
+    melMin + (i * (melMax - melMin)) / (nMels + 1)
+  );
+  const hzPoints = melPoints.map((m) => 700 * (Math.pow(10, m / 2595) - 1));
+  const binPoints = hzPoints.map((h) =>
+    Math.floor(((fftSize + 1) * h) / sampleRate)
+  );
+  const fb = Array.from({ length: nMels }, () =>
+    new Float32Array(fftSize / 2 + 1)
+  );
+  for (let m = 1; m <= nMels; m++) {
+    const fMinus = binPoints[m - 1];
+    const fM = binPoints[m];
+    const fPlus = binPoints[m + 1];
+    for (let k = fMinus; k < fM; k++) {
+      if (fM - fMinus > 0) fb[m - 1][k] = (k - fMinus) / (fM - fMinus);
+    }
+    for (let k = fM; k < fPlus; k++) {
+      if (fPlus - fM > 0) fb[m - 1][k] = (fPlus - k) / (fPlus - fM);
+    }
   }
-  return w;
+  return fb;
 };
 
 // ─── FFT ─────────────────────────────────────────────────────────────────────
-const fft = (signal) => {
+const fftReal = (signal) => {
   const N = signal.length;
-  if (N <= 1) return signal;
-  const even = fft(signal.filter((_, i) => i % 2 === 0));
-  const odd = fft(signal.filter((_, i) => i % 2 !== 0));
+  if (N <= 1) return signal.map((v) => [v, 0]);
+  const even = fftReal(signal.filter((_, i) => i % 2 === 0));
+  const odd = fftReal(signal.filter((_, i) => i % 2 !== 0));
   const result = new Array(N);
   for (let k = 0; k < N / 2; k++) {
     const angle = (-2 * Math.PI * k) / N;
@@ -46,99 +70,52 @@ const fft = (signal) => {
   return result;
 };
 
-// ─── Mel filterbank ──────────────────────────────────────────────────────────
-const melFilterbank = (numFilters, fftSize, sampleRate) => {
-  const melMin = 0;
-  const melMax = 2595 * Math.log10(1 + sampleRate / 2 / 700);
-  const melPoints = Array.from({ length: numFilters + 2 }, (_, i) =>
-    melMin + (i * (melMax - melMin)) / (numFilters + 1)
-  );
-  const hzPoints = melPoints.map((m) => 700 * (Math.pow(10, m / 2595) - 1));
-  const binPoints = hzPoints.map((h) =>
-    Math.floor((fftSize * h) / sampleRate)
-  );
-  const filterbank = [];
-  for (let m = 1; m <= numFilters; m++) {
-    const filter = new Float32Array(fftSize / 2 + 1);
-    for (let k = 0; k < fftSize / 2 + 1; k++) {
-      if (k >= binPoints[m - 1] && k <= binPoints[m]) {
-        filter[k] =
-          (k - binPoints[m - 1]) /
-          (binPoints[m] - binPoints[m - 1] + 1e-10);
-      } else if (k >= binPoints[m] && k <= binPoints[m + 1]) {
-        filter[k] =
-          (binPoints[m + 1] - k) /
-          (binPoints[m + 1] - binPoints[m] + 1e-10);
-      }
-    }
-    filterbank.push(filter);
-  }
-  return filterbank;
-};
+// ─── Pre-computed constants ───────────────────────────────────────────────────
+const MEL_FB = makeMelFilterbank(N_MELS, FRAME_SIZE, SAMPLE_RATE);
+const HANNING_WIN = Array.from(
+  { length: FRAME_SIZE },
+  (_, i) => 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FRAME_SIZE - 1)))
+);
 
-const FILTERBANK = melFilterbank(128, 512, SAMPLE_RATE);
-const HANNING = makeHanningWindow(512);
-
-// ─── MFCC with normalization ─────────────────────────────────────────────────
-const computeMFCC = (audioBuffer) => {
-  const frameSize = 512;
-  const hopSize = 256;
-  const numMelFilters = 128;
+// ─── Log-mel spectrogram (matches Python training exactly) ───────────────────
+const extractLogMel = (audioBuffer) => {
   const frames = [];
 
   for (
     let start = 0;
-    start + frameSize <= audioBuffer.length;
-    start += hopSize
+    start + FRAME_SIZE <= audioBuffer.length;
+    start += HOP_SIZE
   ) {
-    const frame = audioBuffer.slice(start, start + frameSize);
-    const windowed = Array.from(frame).map((v, i) => v * HANNING[i]);
-    const padded = windowed.map((v) => [v, 0]);
-    const spectrum = fft(padded);
+    const frame = Array.from(
+      audioBuffer.slice(start, start + FRAME_SIZE)
+    ).map((v, i) => v * HANNING_WIN[i]);
+
+    const spectrum = fftReal(frame);
     const power = spectrum
-      .slice(0, frameSize / 2 + 1)
+      .slice(0, FRAME_SIZE / 2 + 1)
       .map(([re, im]) => re * re + im * im);
 
-    const melEnergies = FILTERBANK.map((filter) => {
+    const melFrame = MEL_FB.map((filter) => {
       let energy = 0;
       for (let k = 0; k < filter.length; k++)
         energy += filter[k] * power[k];
-      return Math.log(energy + 1e-6);
+      return Math.log(energy + 1e-8);
     });
 
-    const mfcc = new Float32Array(N_MFCC);
-    for (let i = 0; i < N_MFCC; i++) {
-      let sum = 0;
-      for (let j = 0; j < numMelFilters; j++) {
-        sum +=
-          melEnergies[j] *
-          Math.cos((Math.PI * i * (2 * j + 1)) / (2 * numMelFilters));
-      }
-      mfcc[i] = sum;
-    }
-    frames.push(mfcc);
+    frames.push(new Float32Array(melFrame));
     if (frames.length >= N_FRAMES) break;
   }
 
   while (frames.length < N_FRAMES) {
-    frames.push(new Float32Array(N_MFCC));
+    frames.push(new Float32Array(N_MELS).fill(-18.0));
   }
 
-  const result = frames.slice(0, N_FRAMES);
-
-  // Normalize to zero mean and unit variance — matches Python training
-  const allValues = result.flatMap((f) => Array.from(f));
-  const mean =
-    allValues.reduce((s, v) => s + v, 0) / allValues.length;
-  const std =
-    Math.sqrt(
-      allValues.reduce((s, v) => s + (v - mean) ** 2, 0) /
-        allValues.length
-    ) + 1e-6;
-
-  return result.map((frame) =>
-    Float32Array.from(frame, (v) => (v - mean) / std)
-  );
+  // Apply global normalization using exact training dataset stats
+  return frames
+    .slice(0, N_FRAMES)
+    .map((frame) =>
+      Float32Array.from(frame, (v) => (v - NORM_MEAN) / NORM_STD)
+    );
 };
 
 export default function SosPage() {
@@ -192,7 +169,7 @@ export default function SosPage() {
           "/keyword_model_tfjs/model.json"
         );
         modelRef.current = m;
-        const dummy = tf.zeros([1, N_FRAMES, N_MFCC, 1]);
+        const dummy = tf.zeros([1, N_FRAMES, N_MELS, 1]);
         await modelRef.current.predict(dummy).data();
         dummy.dispose();
         setVoiceReady(true);
@@ -236,25 +213,16 @@ export default function SosPage() {
     inferenceRunningRef.current = true;
 
     try {
-      const mfcc = computeMFCC(audioData);
-
-      // Debug
-      const mfccFlat = mfcc.flatMap((f) => Array.from(f));
-      const mfccMax = Math.max(...mfccFlat.map(Math.abs));
-      const mfccAvg =
-        mfccFlat.reduce((s, v) => s + Math.abs(v), 0) / mfccFlat.length;
-      console.log(
-        `MFCC after norm: max=${mfccMax.toFixed(4)}, avg=${mfccAvg.toFixed(4)}`
-      );
+      const frames = extractLogMel(audioData);
 
       const flat = [];
       for (let i = 0; i < N_FRAMES; i++) {
-        for (let j = 0; j < N_MFCC; j++) {
-          flat.push(mfcc[i][j]);
+        for (let j = 0; j < N_MELS; j++) {
+          flat.push(frames[i][j]);
         }
       }
 
-      const inputTensor = tf.tensor4d(flat, [1, N_FRAMES, N_MFCC, 1]);
+      const inputTensor = tf.tensor4d(flat, [1, N_FRAMES, N_MELS, 1]);
       const prediction = modelRef.current.predict(inputTensor);
       const score = (await prediction.data())[0];
       inputTensor.dispose();
