@@ -17,15 +17,13 @@ const SAMPLE_RATE = 16000;
 const DURATION = 2;
 const N_MELS = 40;
 const N_FRAMES = 64;
-const NORM_MEAN = -5.2503;
-const NORM_STD = 3.9637;
 const THRESHOLD = 0.75;
 const COOLDOWN_MS = 15000;
 const COUNTDOWN_SECONDS = 3;
 const FRAME_SIZE = 512;
 const HOP_SIZE = 256;
 
-// ─── Mel filterbank (matches Python training exactly) ────────────────────────
+// ─── Mel filterbank ──────────────────────────────────────────────────────────
 const makeMelFilterbank = (nMels, fftSize, sampleRate) => {
   const melMin = 2595 * Math.log10(1 + 80 / 700);
   const melMax = 2595 * Math.log10(1 + sampleRate / 2 / 700);
@@ -77,7 +75,7 @@ const HANNING_WIN = Array.from(
   (_, i) => 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FRAME_SIZE - 1)))
 );
 
-// ─── Log-mel spectrogram (matches Python training exactly) ───────────────────
+// ─── Log-mel spectrogram — no normalization, matches Python training ──────────
 const extractLogMel = (audioBuffer) => {
   const frames = [];
 
@@ -110,12 +108,7 @@ const extractLogMel = (audioBuffer) => {
     frames.push(new Float32Array(N_MELS).fill(-18.0));
   }
 
-  // Apply global normalization using exact training dataset stats
-  return frames
-    .slice(0, N_FRAMES)
-    .map((frame) =>
-      Float32Array.from(frame, (v) => (v - NORM_MEAN) / NORM_STD)
-    );
+  return frames.slice(0, N_FRAMES);
 };
 
 export default function SosPage() {

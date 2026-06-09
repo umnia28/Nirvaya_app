@@ -12,24 +12,10 @@ weight_name_map = {
     "conv2d_1/weight_1": "conv2d_1/bias",
     "conv2d_2/weight_0": "conv2d_2/kernel",
     "conv2d_2/weight_1": "conv2d_2/bias",
-    "batch_normalization/weight_0": "batch_normalization/gamma",
-    "batch_normalization/weight_1": "batch_normalization/beta",
-    "batch_normalization/weight_2": "batch_normalization/moving_mean",
-    "batch_normalization/weight_3": "batch_normalization/moving_variance",
-    "batch_normalization_1/weight_0": "batch_normalization_1/gamma",
-    "batch_normalization_1/weight_1": "batch_normalization_1/beta",
-    "batch_normalization_1/weight_2": "batch_normalization_1/moving_mean",
-    "batch_normalization_1/weight_3": "batch_normalization_1/moving_variance",
-    "batch_normalization_2/weight_0": "batch_normalization_2/gamma",
-    "batch_normalization_2/weight_1": "batch_normalization_2/beta",
-    "batch_normalization_2/weight_2": "batch_normalization_2/moving_mean",
-    "batch_normalization_2/weight_3": "batch_normalization_2/moving_variance",
     "dense/weight_0": "dense/kernel",
     "dense/weight_1": "dense/bias",
     "dense_1/weight_0": "dense_1/kernel",
     "dense_1/weight_1": "dense_1/bias",
-    "dense_2/weight_0": "dense_2/kernel",
-    "dense_2/weight_1": "dense_2/bias",
 }
 
 for manifest in weights_manifest:
@@ -53,7 +39,7 @@ tfjs_model = {
                             "trainable": True,
                             "batch_input_shape": [None, 64, 40, 1],
                             "dtype": "float32",
-                            "filters": 32,
+                            "filters": 16,
                             "kernel_size": [3, 3],
                             "strides": [1, 1],
                             "padding": "same",
@@ -61,19 +47,6 @@ tfjs_model = {
                             "dilation_rate": [1, 1],
                             "activation": "relu",
                             "use_bias": True,
-                        }
-                    },
-                    {
-                        "class_name": "BatchNormalization",
-                        "config": {
-                            "name": "batch_normalization",
-                            "trainable": True,
-                            "dtype": "float32",
-                            "axis": 3,
-                            "momentum": 0.99,
-                            "epsilon": 0.001,
-                            "center": True,
-                            "scale": True,
                         }
                     },
                     {
@@ -94,7 +67,7 @@ tfjs_model = {
                             "name": "conv2d_1",
                             "trainable": True,
                             "dtype": "float32",
-                            "filters": 64,
+                            "filters": 32,
                             "kernel_size": [3, 3],
                             "strides": [1, 1],
                             "padding": "same",
@@ -102,19 +75,6 @@ tfjs_model = {
                             "dilation_rate": [1, 1],
                             "activation": "relu",
                             "use_bias": True,
-                        }
-                    },
-                    {
-                        "class_name": "BatchNormalization",
-                        "config": {
-                            "name": "batch_normalization_1",
-                            "trainable": True,
-                            "dtype": "float32",
-                            "axis": 3,
-                            "momentum": 0.99,
-                            "epsilon": 0.001,
-                            "center": True,
-                            "scale": True,
                         }
                     },
                     {
@@ -135,7 +95,7 @@ tfjs_model = {
                             "name": "conv2d_2",
                             "trainable": True,
                             "dtype": "float32",
-                            "filters": 128,
+                            "filters": 64,
                             "kernel_size": [3, 3],
                             "strides": [1, 1],
                             "padding": "same",
@@ -143,19 +103,6 @@ tfjs_model = {
                             "dilation_rate": [1, 1],
                             "activation": "relu",
                             "use_bias": True,
-                        }
-                    },
-                    {
-                        "class_name": "BatchNormalization",
-                        "config": {
-                            "name": "batch_normalization_2",
-                            "trainable": True,
-                            "dtype": "float32",
-                            "axis": 3,
-                            "momentum": 0.99,
-                            "epsilon": 0.001,
-                            "center": True,
-                            "scale": True,
                         }
                     },
                     {
@@ -185,7 +132,7 @@ tfjs_model = {
                             "name": "dense",
                             "trainable": True,
                             "dtype": "float32",
-                            "units": 128,
+                            "units": 64,
                             "activation": "relu",
                             "use_bias": True,
                         }
@@ -196,33 +143,13 @@ tfjs_model = {
                             "name": "dropout",
                             "trainable": True,
                             "dtype": "float32",
-                            "rate": 0.4,
+                            "rate": 0.5,
                         }
                     },
                     {
                         "class_name": "Dense",
                         "config": {
                             "name": "dense_1",
-                            "trainable": True,
-                            "dtype": "float32",
-                            "units": 64,
-                            "activation": "relu",
-                            "use_bias": True,
-                        }
-                    },
-                    {
-                        "class_name": "Dropout",
-                        "config": {
-                            "name": "dropout_1",
-                            "trainable": True,
-                            "dtype": "float32",
-                            "rate": 0.3,
-                        }
-                    },
-                    {
-                        "class_name": "Dense",
-                        "config": {
-                            "name": "dense_2",
                             "trainable": True,
                             "dtype": "float32",
                             "units": 1,

@@ -6,23 +6,19 @@ print("Loading model...")
 
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(64, 40, 1)),
+
+    tf.keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same'),
+    tf.keras.layers.MaxPooling2D((2, 2)),
+
     tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
-    tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
 
     tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
-    tf.keras.layers.BatchNormalization(),
-    tf.keras.layers.MaxPooling2D((2, 2)),
-
-    tf.keras.layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
-    tf.keras.layers.BatchNormalization(),
     tf.keras.layers.MaxPooling2D((2, 2)),
 
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.4),
     tf.keras.layers.Dense(64, activation='relu'),
-    tf.keras.layers.Dropout(0.3),
+    tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(1, activation='sigmoid'),
 ])
 
@@ -39,13 +35,12 @@ for layer in model.layers:
     weights = layer.get_weights()
     for i, w in enumerate(weights):
         w_flat = w.flatten().astype(np.float32)
-        byte_length = w_flat.nbytes
         weight_data += w_flat.tobytes()
         weight_manifest.append({
             "name": f"{layer.name}/weight_{i}",
             "shape": list(w.shape),
             "dtype": "float32",
-            "byteLength": byte_length
+            "byteLength": w_flat.nbytes
         })
 
 with open("keyword_model_tfjs/group1-shard1of1.bin", "wb") as f:
@@ -66,7 +61,7 @@ manifest = {
 with open("keyword_model_tfjs/model.json", "w") as f:
     json.dump(manifest, f)
 
-print("Done! keyword_model_tfjs/ is ready.")
-print(f"Files created:")
+size_kb = len(weight_data) / 1024
+print(f"Done! Files created:")
 print(f"  keyword_model_tfjs/model.json")
-print(f"  keyword_model_tfjs/group1-shard1of1.bin ({len(weight_data)/1024:.1f} KB)")
+print(f"  keyword_model_tfjs/group1-shard1of1.bin ({size_kb:.1f} KB)")
