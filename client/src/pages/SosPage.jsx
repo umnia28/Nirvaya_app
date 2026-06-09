@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import * as tf from "@tensorflow/tfjs";
 
 import { API_URL } from "../config";
 import { getOrCreateDeviceId } from "../services/deviceService";
@@ -13,102 +12,29 @@ import "./SosPage.css";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const ACTIVE_SOS_KEY = "nirvaya_active_sos";
-const SAMPLE_RATE = 16000;
-const DURATION = 2;
-const N_MELS = 40;
-const N_FRAMES = 64;
-const THRESHOLD = 0.75;
 const COOLDOWN_MS = 15000;
 const COUNTDOWN_SECONDS = 3;
-const FRAME_SIZE = 512;
-const HOP_SIZE = 256;
 
-// ─── Mel filterbank ──────────────────────────────────────────────────────────
-const makeMelFilterbank = (nMels, fftSize, sampleRate) => {
-  const melMin = 2595 * Math.log10(1 + 80 / 700);
-  const melMax = 2595 * Math.log10(1 + sampleRate / 2 / 700);
-  const melPoints = Array.from({ length: nMels + 2 }, (_, i) =>
-    melMin + (i * (melMax - melMin)) / (nMels + 1)
+// ─── Keywords to detect ───────────────────────────────────────────────────────
+const KEYWORDS = [
+  "সাহায্য করো",
+  "সাহায্য কর",
+  "সাহায্য",
+  "বাঁচাও",
+  "bachao",
+  "help me",
+  "helpme",
+  "nirapod",
+];
+
+const normalizeText = (text) =>
+  text.toLowerCase().trim().replace(/\s+/g, " ");
+
+const containsKeyword = (transcript) => {
+  const normalized = normalizeText(transcript);
+  return KEYWORDS.some((kw) =>
+    normalized.includes(normalizeText(kw))
   );
-  const hzPoints = melPoints.map((m) => 700 * (Math.pow(10, m / 2595) - 1));
-  const binPoints = hzPoints.map((h) =>
-    Math.floor(((fftSize + 1) * h) / sampleRate)
-  );
-  const fb = Array.from({ length: nMels }, () =>
-    new Float32Array(fftSize / 2 + 1)
-  );
-  for (let m = 1; m <= nMels; m++) {
-    const fMinus = binPoints[m - 1];
-    const fM = binPoints[m];
-    const fPlus = binPoints[m + 1];
-    for (let k = fMinus; k < fM; k++) {
-      if (fM - fMinus > 0) fb[m - 1][k] = (k - fMinus) / (fM - fMinus);
-    }
-    for (let k = fM; k < fPlus; k++) {
-      if (fPlus - fM > 0) fb[m - 1][k] = (fPlus - k) / (fPlus - fM);
-    }
-  }
-  return fb;
-};
-
-// ─── FFT ─────────────────────────────────────────────────────────────────────
-const fftReal = (signal) => {
-  const N = signal.length;
-  if (N <= 1) return signal.map((v) => [v, 0]);
-  const even = fftReal(signal.filter((_, i) => i % 2 === 0));
-  const odd = fftReal(signal.filter((_, i) => i % 2 !== 0));
-  const result = new Array(N);
-  for (let k = 0; k < N / 2; k++) {
-    const angle = (-2 * Math.PI * k) / N;
-    const re = Math.cos(angle) * odd[k][0] - Math.sin(angle) * odd[k][1];
-    const im = Math.cos(angle) * odd[k][1] + Math.sin(angle) * odd[k][0];
-    result[k] = [even[k][0] + re, even[k][1] + im];
-    result[k + N / 2] = [even[k][0] - re, even[k][1] - im];
-  }
-  return result;
-};
-
-// ─── Pre-computed constants ───────────────────────────────────────────────────
-const MEL_FB = makeMelFilterbank(N_MELS, FRAME_SIZE, SAMPLE_RATE);
-const HANNING_WIN = Array.from(
-  { length: FRAME_SIZE },
-  (_, i) => 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FRAME_SIZE - 1)))
-);
-
-// ─── Log-mel spectrogram — no normalization, matches Python training ──────────
-const extractLogMel = (audioBuffer) => {
-  const frames = [];
-
-  for (
-    let start = 0;
-    start + FRAME_SIZE <= audioBuffer.length;
-    start += HOP_SIZE
-  ) {
-    const frame = Array.from(
-      audioBuffer.slice(start, start + FRAME_SIZE)
-    ).map((v, i) => v * HANNING_WIN[i]);
-
-    const spectrum = fftReal(frame);
-    const power = spectrum
-      .slice(0, FRAME_SIZE / 2 + 1)
-      .map(([re, im]) => re * re + im * im);
-
-    const melFrame = MEL_FB.map((filter) => {
-      let energy = 0;
-      for (let k = 0; k < filter.length; k++)
-        energy += filter[k] * power[k];
-      return Math.log(energy + 1e-8);
-    });
-
-    frames.push(new Float32Array(melFrame));
-    if (frames.length >= N_FRAMES) break;
-  }
-
-  while (frames.length < N_FRAMES) {
-    frames.push(new Float32Array(N_MELS).fill(-18.0));
-  }
-
-  return frames.slice(0, N_FRAMES);
 };
 
 export default function SosPage() {
@@ -122,17 +48,11 @@ export default function SosPage() {
   const audioRef = useRef(null);
 
   // ─── Voice refs ────────────────────────────────────────────────────────
-  const modelRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const processorRef = useRef(null);
-  const streamRef = useRef(null);
-  const audioBufferRef = useRef([]);
-  const lastTriggerRef = useRef(0);
-  const isListeningRef = useRef(false);
+  const recognitionRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const countdownActiveRef = useRef(false);
-  const inferenceCounterRef = useRef(0);
-  const inferenceRunningRef = useRef(false);
+  const lastTriggerRef = useRef(0);
+  const restartTimeoutRef = useRef(null);
 
   // ─── Existing state ────────────────────────────────────────────────────
   const [profile, setProfile] = useState(null);
@@ -151,28 +71,20 @@ export default function SosPage() {
   const [voiceReady, setVoiceReady] = useState(false);
   const [voiceCountdown, setVoiceCountdown] = useState(null);
   const [voiceError, setVoiceError] = useState("");
-  const [lastScore, setLastScore] = useState(null);
+  const [lastTranscript, setLastTranscript] = useState("");
 
-  // ─── Load TF.js model ──────────────────────────────────────────────────
+  // ─── Check browser support ─────────────────────────────────────────────
   useEffect(() => {
-    const loadModel = async () => {
-      try {
-        console.log("Loading keyword model...");
-        const m = await tf.loadLayersModel(
-          "/keyword_model_tfjs/model.json"
-        );
-        modelRef.current = m;
-        const dummy = tf.zeros([1, N_FRAMES, N_MELS, 1]);
-        await modelRef.current.predict(dummy).data();
-        dummy.dispose();
-        setVoiceReady(true);
-        console.log("Keyword model loaded and ready.");
-      } catch (err) {
-        console.error("Failed to load keyword model:", err);
-        setVoiceError("Voice model failed to load.");
-      }
-    };
-    loadModel();
+    if (
+      "SpeechRecognition" in window ||
+      "webkitSpeechRecognition" in window
+    ) {
+      setVoiceReady(true);
+    } else {
+      setVoiceError(
+        "Voice SOS requires Chrome browser. Please open this app in Chrome."
+      );
+    }
   }, []);
 
   // ─── Existing init ─────────────────────────────────────────────────────
@@ -199,126 +111,119 @@ export default function SosPage() {
     };
   }, []);
 
-  // ─── Voice: inference ──────────────────────────────────────────────────
-  const runInference = useCallback(async (audioData) => {
-    if (!modelRef.current) return;
-    if (inferenceRunningRef.current) return;
-    inferenceRunningRef.current = true;
+  // ─── Voice: start listening ────────────────────────────────────────────
+  const startVoiceListening = useCallback(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceError(
+        "Voice SOS requires Chrome browser."
+      );
+      setVoiceEnabled(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "bn-BD";
+    recognition.maxAlternatives = 3;
+
+    recognition.onstart = () => {
+      console.log("Voice SOS listening started.");
+      setVoiceError("");
+    };
+
+    recognition.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        for (let j = 0; j < result.length; j++) {
+          const transcript = result[j].transcript;
+          setLastTranscript(transcript);
+          console.log(
+            `Speech: "${transcript}" (${
+              result.isFinal ? "final" : "interim"
+            })`
+          );
+
+          if (containsKeyword(transcript)) {
+            const now = Date.now();
+            if (now - lastTriggerRef.current >= COOLDOWN_MS) {
+              console.log("Keyword detected:", transcript);
+              lastTriggerRef.current = now;
+              startVoiceCountdown();
+            }
+          }
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === "not-allowed") {
+        setVoiceError("Microphone access denied.");
+        setVoiceEnabled(false);
+      } else if (event.error === "no-speech") {
+        // Normal — just no speech detected, will auto-restart
+      } else if (event.error === "network") {
+        setVoiceError(
+          "Network error. Voice SOS requires internet connection."
+        );
+      }
+    };
+
+    recognition.onend = () => {
+      // Auto-restart if still enabled
+      if (recognitionRef.current) {
+        restartTimeoutRef.current = setTimeout(() => {
+          try {
+            recognitionRef.current?.start();
+          } catch (_) {}
+        }, 300);
+      }
+    };
+
+    recognitionRef.current = recognition;
 
     try {
-      const frames = extractLogMel(audioData);
-
-      const flat = [];
-      for (let i = 0; i < N_FRAMES; i++) {
-        for (let j = 0; j < N_MELS; j++) {
-          flat.push(frames[i][j]);
-        }
-      }
-
-      const inputTensor = tf.tensor4d(flat, [1, N_FRAMES, N_MELS, 1]);
-      const prediction = modelRef.current.predict(inputTensor);
-      const score = (await prediction.data())[0];
-      inputTensor.dispose();
-      prediction.dispose();
-
-      setLastScore(score.toFixed(3));
-      console.log("Keyword score:", score.toFixed(3));
-
-      if (score >= THRESHOLD) {
-        const now = Date.now();
-        if (now - lastTriggerRef.current >= COOLDOWN_MS) {
-          lastTriggerRef.current = now;
-          startVoiceCountdown();
-        }
-      }
+      recognition.start();
     } catch (err) {
-      console.error("Inference error:", err);
-    } finally {
-      inferenceRunningRef.current = false;
+      console.error("Failed to start recognition:", err);
+      setVoiceError("Failed to start voice recognition.");
     }
   }, []);
 
-  // ─── Voice: start listening ────────────────────────────────────────────
-  const startVoiceListening = useCallback(async () => {
-    if (isListeningRef.current) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: SAMPLE_RATE,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      });
-      streamRef.current = stream;
-
-      const audioContext = new (window.AudioContext ||
-        window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
-      audioContextRef.current = audioContext;
-
-      const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      processorRef.current = processor;
-
-      const targetSamples = SAMPLE_RATE * DURATION;
-
-      processor.onaudioprocess = (event) => {
-        const channelData = event.inputBuffer.getChannelData(0);
-        audioBufferRef.current.push(...Array.from(channelData));
-
-        if (audioBufferRef.current.length > targetSamples) {
-          audioBufferRef.current = audioBufferRef.current.slice(
-            audioBufferRef.current.length - targetSamples
-          );
-          inferenceCounterRef.current += 1;
-          if (inferenceCounterRef.current % 3 === 0) {
-            runInference(new Float32Array(audioBufferRef.current));
-          }
-        }
-      };
-
-      source.connect(processor);
-      processor.connect(audioContext.destination);
-      isListeningRef.current = true;
-      setVoiceError("");
-      console.log("Voice SOS listening started.");
-    } catch (err) {
-      setVoiceError("Microphone access denied.");
-      setVoiceEnabled(false);
-      console.error("Mic error:", err);
-    }
-  }, [runInference]);
-
   // ─── Voice: stop listening ─────────────────────────────────────────────
   const stopVoiceListening = useCallback(() => {
-    try {
-      processorRef.current?.disconnect();
-      audioContextRef.current?.close();
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    } catch (_) {}
-    isListeningRef.current = false;
-    inferenceRunningRef.current = false;
-    audioBufferRef.current = [];
-    inferenceCounterRef.current = 0;
+    clearTimeout(restartTimeoutRef.current);
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      try {
+        recognitionRef.current.stop();
+      } catch (_) {}
+      recognitionRef.current = null;
+    }
     console.log("Voice SOS listening stopped.");
   }, []);
 
   // ─── Voice: toggle ─────────────────────────────────────────────────────
-  const handleVoiceToggle = async () => {
+  const handleVoiceToggle = () => {
     if (voiceEnabled) {
       stopVoiceListening();
       setVoiceEnabled(false);
       clearInterval(countdownTimerRef.current);
       countdownActiveRef.current = false;
       setVoiceCountdown(null);
-      setLastScore(null);
+      setLastTranscript("");
     } else {
       setVoiceEnabled(true);
-      await startVoiceListening();
+      startVoiceListening();
     }
   };
 
-  // ─── Voice: countdown ──────────────────────────────────────────────────
+  // ─── Voice: countdown then fire SOS ───────────────────────────────────
   const startVoiceCountdown = useCallback(() => {
     if (countdownActiveRef.current) return;
     countdownActiveRef.current = true;
@@ -906,13 +811,13 @@ export default function SosPage() {
             <div className="card-text-box">
               <p className="card-title">Voice SOS — "সাহায্য করো"</p>
               <p className="card-subtitle">
-                {!voiceReady
-                  ? "Loading voice model..."
+                {!voiceReady && !voiceError
+                  ? "Checking browser support..."
                   : voiceEnabled
-                  ? `Listening... ${
-                      lastScore ? `(score: ${lastScore})` : ""
-                    }`
-                  : "Say the keyword to trigger SOS hands-free"}
+                  ? lastTranscript
+                    ? `Heard: "${lastTranscript}"`
+                    : "Listening for keyword..."
+                  : "Say 'সাহায্য করো' to trigger SOS hands-free"}
               </p>
               {voiceError && (
                 <p className="zone-text" style={{ color: "#D90429" }}>
