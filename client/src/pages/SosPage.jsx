@@ -10,51 +10,37 @@ import {
 
 import "./SosPage.css";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
 const ACTIVE_SOS_KEY = "nirvaya_active_sos";
 const COOLDOWN_MS = 15000;
 const COUNTDOWN_SECONDS = 3;
-
-// ─── Keywords to detect ───────────────────────────────────────────────────────
-const KEYWORDS = [
-  "সাহায্য করো",
-  "সাহায্য কর",
-  "সাহায্য",
-  "বাঁচাও",
-  "bachao",
-  "help me",
-  "helpme",
-  "nirapod",
-];
 
 const normalizeText = (text) =>
   text.toLowerCase().trim().replace(/\s+/g, " ");
 
 const containsKeyword = (transcript) => {
   const normalized = normalizeText(transcript);
-  return KEYWORDS.some((kw) =>
-    normalized.includes(normalizeText(kw))
+  return (
+    normalized.includes("সাহায্য করো") ||
+    normalized.includes("sahajyo koro") ||
+    normalized.includes("সাহায্য কর")
   );
 };
 
 export default function SosPage() {
   const navigate = useNavigate();
 
-  // ─── Existing refs ─────────────────────────────────────────────────────
   const sosUpdateIntervalRef = useRef(null);
   const normalTrackingIntervalRef = useRef(null);
   const lastRiskAlertTimeRef = useRef(0);
   const lastRiskAlertLocationRef = useRef(null);
   const audioRef = useRef(null);
 
-  // ─── Voice refs ────────────────────────────────────────────────────────
   const recognitionRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const countdownActiveRef = useRef(false);
   const lastTriggerRef = useRef(0);
   const restartTimeoutRef = useRef(null);
 
-  // ─── Existing state ────────────────────────────────────────────────────
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -66,14 +52,12 @@ export default function SosPage() {
   const [normalTrackingEnabled, setNormalTrackingEnabled] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState("Dhaka");
 
-  // ─── Voice state ───────────────────────────────────────────────────────
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceReady, setVoiceReady] = useState(false);
   const [voiceCountdown, setVoiceCountdown] = useState(null);
   const [voiceError, setVoiceError] = useState("");
   const [lastTranscript, setLastTranscript] = useState("");
 
-  // ─── Check browser support ─────────────────────────────────────────────
   useEffect(() => {
     if (
       "SpeechRecognition" in window ||
@@ -87,7 +71,6 @@ export default function SosPage() {
     }
   }, []);
 
-  // ─── Existing init ─────────────────────────────────────────────────────
   useEffect(() => {
     const savedProfile = getLocalProfile();
     setProfile(savedProfile);
@@ -111,15 +94,12 @@ export default function SosPage() {
     };
   }, []);
 
-  // ─── Voice: start listening ────────────────────────────────────────────
   const startVoiceListening = useCallback(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setVoiceError(
-        "Voice SOS requires Chrome browser."
-      );
+      setVoiceError("Voice SOS requires Chrome browser.");
       setVoiceEnabled(false);
       return;
     }
@@ -164,8 +144,6 @@ export default function SosPage() {
       if (event.error === "not-allowed") {
         setVoiceError("Microphone access denied.");
         setVoiceEnabled(false);
-      } else if (event.error === "no-speech") {
-        // Normal — just no speech detected, will auto-restart
       } else if (event.error === "network") {
         setVoiceError(
           "Network error. Voice SOS requires internet connection."
@@ -174,7 +152,6 @@ export default function SosPage() {
     };
 
     recognition.onend = () => {
-      // Auto-restart if still enabled
       if (recognitionRef.current) {
         restartTimeoutRef.current = setTimeout(() => {
           try {
@@ -194,7 +171,6 @@ export default function SosPage() {
     }
   }, []);
 
-  // ─── Voice: stop listening ─────────────────────────────────────────────
   const stopVoiceListening = useCallback(() => {
     clearTimeout(restartTimeoutRef.current);
     if (recognitionRef.current) {
@@ -208,7 +184,6 @@ export default function SosPage() {
     console.log("Voice SOS listening stopped.");
   }, []);
 
-  // ─── Voice: toggle ─────────────────────────────────────────────────────
   const handleVoiceToggle = () => {
     if (voiceEnabled) {
       stopVoiceListening();
@@ -223,7 +198,6 @@ export default function SosPage() {
     }
   };
 
-  // ─── Voice: countdown then fire SOS ───────────────────────────────────
   const startVoiceCountdown = useCallback(() => {
     if (countdownActiveRef.current) return;
     countdownActiveRef.current = true;
@@ -252,7 +226,6 @@ export default function SosPage() {
     setVoiceCountdown(null);
   };
 
-  // ─── Location ──────────────────────────────────────────────────────────
   const getCurrentLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -450,7 +423,6 @@ export default function SosPage() {
     await startNormalLocationTracking();
   };
 
-  // ─── SOS trigger ───────────────────────────────────────────────────────
   const handleSosPress = async (triggerType = "button") => {
     try {
       setLoading(true);
@@ -707,7 +679,6 @@ export default function SosPage() {
             </button>
           )}
 
-          {/* ── Voice countdown overlay ──────────────────────────────── */}
           {voiceCountdown !== null && (
             <div
               className="tracking-card"
@@ -801,7 +772,6 @@ export default function SosPage() {
             </button>
           </div>
 
-          {/* ── Voice SOS card ───────────────────────────────────────── */}
           <div className="tracking-card">
             <div
               className={
