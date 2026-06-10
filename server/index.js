@@ -8,7 +8,7 @@ import sosRoutes from "./routes/sosRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
 import routeRoutes from "./routes/routeRoutes.js";
 
-
+import { startLocationCleanupJob } from "./jobs/locationCleanupJob.js";
 
 dotenv.config();
 
@@ -84,4 +84,5 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startLocationCleanupJob();
 });
