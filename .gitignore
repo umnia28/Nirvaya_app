@@ -1,4 +1,4 @@
-
+.env
 venv_tflite/
 venv/
 __pycache__/
