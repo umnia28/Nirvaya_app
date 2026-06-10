@@ -114,15 +114,11 @@ export const startSos = async (req, res) => {
     const trackingLink = buildTrackingLink(publicToken);
     const googleMapsLink = buildGoogleMapsLink(latitude, longitude);
 
-    // Generate AI emergency message
     const riskLevel =
-      risk_score >= 8
-        ? "critical"
-        : risk_score >= 5
-        ? "high"
-        : risk_score >= 3
-        ? "medium"
-        : "low";
+      risk_score >= 8 ? "critical"
+      : risk_score >= 5 ? "high"
+      : risk_score >= 3 ? "medium"
+      : "low";
 
     const aiMessage = generateEmergencyMessage({
       userName: user_name || "App User",
@@ -159,9 +155,7 @@ export const startSos = async (req, res) => {
       ai_message: aiMessage,
     });
   } catch (error) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {}
+    try { await client.query("ROLLBACK"); } catch {}
     console.error("Start SOS error:", error);
     return res.status(500).json({
       success: false,
@@ -334,11 +328,14 @@ export const resolveSos = async (req, res) => {
 };
 
 export const getIncidentReport = async (req, res) => {
+  const client = await pool.connect();
+
   try {
     const { sosId } = req.params;
     const deviceId = req.deviceId;
 
-    const sosResult = await pool.query(
+    // Fetch SOS alert
+    const sosResult = await client.query(
       `SELECT * FROM sos_alerts
        WHERE id = $1 AND device_id = $2`,
       [sosId, deviceId]
@@ -353,7 +350,8 @@ export const getIncidentReport = async (req, res) => {
 
     const sos = sosResult.rows[0];
 
-    const locationResult = await pool.query(
+    // Fetch full location history
+    const locationResult = await client.query(
       `SELECT latitude, longitude, recorded_at
        FROM sos_location_updates
        WHERE sos_alert_id = $1
@@ -361,24 +359,93 @@ export const getIncidentReport = async (req, res) => {
       [sosId]
     );
 
+    const locationHistory = locationResult.rows;
     const trackingLink = buildTrackingLink(sos.public_token);
 
-    const report = generateIncidentReport({
+    const durationMinutes = sos.resolved_at
+      ? Math.round(
+          (new Date(sos.resolved_at) - new Date(sos.created_at)) / 60000
+        )
+      : 0;
+
+    const riskLevel =
+      sos.risk_score >= 8 ? "critical"
+      : sos.risk_score >= 5 ? "high"
+      : sos.risk_score >= 3 ? "medium"
+      : "low";
+
+    // Generate report text
+    const reportText = generateIncidentReport({
       userName: sos.user_name || "App User",
       sosId: sos.id,
       startTime: sos.created_at,
       endTime: sos.resolved_at || new Date().toISOString(),
       district: sos.district || "Dhaka",
-      locationHistory: locationResult.rows || [],
+      locationHistory,
       riskScore: sos.risk_score,
       triggerType: sos.trigger_type,
       trackingLink,
     });
 
+    // Check if report already exists for this SOS
+    const existingReport = await client.query(
+      `SELECT id FROM incident_reports WHERE sos_alert_id = $1`,
+      [sosId]
+    );
+
+    let savedReport;
+
+    if (existingReport.rows.length > 0) {
+      // Update existing report
+      const updateResult = await client.query(
+        `UPDATE incident_reports
+         SET report_text = $1, generated_at = NOW()
+         WHERE sos_alert_id = $2
+         RETURNING *`,
+        [reportText, sosId]
+      );
+      savedReport = updateResult.rows[0];
+      console.log("Incident report updated in DB:", savedReport.id);
+    } else {
+      // Insert new report
+      const insertResult = await client.query(
+        `INSERT INTO incident_reports (
+          sos_alert_id,
+          device_id,
+          report_text,
+          district,
+          latitude,
+          longitude,
+          risk_score,
+          risk_level,
+          trigger_type,
+          duration_minutes,
+          location_points_count
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING *`,
+        [
+          sosId,
+          deviceId,
+          reportText,
+          sos.district || "Dhaka",
+          sos.latitude,
+          sos.longitude,
+          sos.risk_score,
+          riskLevel,
+          sos.trigger_type,
+          durationMinutes,
+          locationHistory.length,
+        ]
+      );
+      savedReport = insertResult.rows[0];
+      console.log("Incident report saved to DB:", savedReport.id);
+    }
+
     return res.status(200).json({
       success: true,
-      report,
-      generated_at: new Date().toISOString(),
+      report: reportText,
+      report_id: savedReport.id,
+      generated_at: savedReport.generated_at,
     });
   } catch (error) {
     console.error("Incident report error:", error);
@@ -387,5 +454,7 @@ export const getIncidentReport = async (req, res) => {
       message: "Failed to generate incident report",
       error: error.message,
     });
+  } finally {
+    client.release();
   }
 };
