@@ -1,155 +1,140 @@
+/* ============================================================
+   Nirvaya — Safe Routes page
+   Same design system as SosPage.css (plum / lavender / Inter).
+   Desktop: side panel + map. Mobile: full map + bottom sheet.
+   ============================================================ */
+
 :root {
-  --primary: #ed234f;
-  --primary-soft: #fff0f3;
-  --primary-soft-2: #fff7f8;
-  --primary-border: #ffc9d4;
-  --primary-border-light: #ffe1e7;
-  --dark: #130015;
-  --muted: #9a6a76;
-  --safe-green: #21a67a;
-  --orange: #ff9900;
-  --shadow: rgba(19, 0, 21, 0.14);
+  --nv-bg: #f6f4f7;
+  --nv-surface: #ffffff;
+  --nv-ink: #221a2e;
+  --nv-ink-soft: #6f6580;
+  --nv-line: #e7e2ec;
+  --nv-primary: #5b2a86;
+  --nv-sos: #d6224c;
+  --nv-safe: #1f8a5b;
+  --nv-warn: #e08700;
+  --nv-radius: 16px;
+  --nv-shadow: 0 6px 20px rgba(34, 26, 46, 0.08);
+  --nv-font: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
 }
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  margin: 0;
-  width: 100%;
-  min-height: 100%;
-}
-
-body {
-  overflow-x: hidden;
-  background: #f7f7f8;
-}
-
-/* =========================
-   DESKTOP DEFAULT
-========================= */
 
 .safe-routes-page {
-  width: 100%;
-  min-height: 100vh;
-  background: #f7f7f8;
-  color: var(--dark);
-}
-
-.safe-routes-shell {
-  width: 100%;
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 390px minmax(0, 1fr);
-  background: #fff;
-}
-
-.safe-routes-panel {
-  display: block;
-  position: relative;
   height: 100vh;
-  overflow-y: auto;
-  background: #ffffff;
-  border-right: 1px solid var(--primary-border-light);
-  padding: 26px 24px 34px;
-  z-index: 10;
-}
-
-.safe-routes-panel-content {
-  display: block;
-}
-
-.safe-routes-map-panel {
-  position: relative;
-  height: 100vh;
-  min-height: 600px;
+  height: 100dvh;
+  background: var(--nv-bg);
+  font-family: var(--nv-font);
+  color: var(--nv-ink);
   overflow: hidden;
 }
 
-.safe-routes-map {
-  width: 100%;
+.safe-routes-shell {
+  display: flex;
   height: 100%;
+  width: 100%;
 }
 
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  font-family: inherit;
+/* ---------- Panel (desktop sidebar) ---------- */
+
+.safe-routes-panel {
+  width: 390px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--nv-bg);
+  border-right: 1px solid var(--nv-line);
 }
 
-/* =========================
-   SHARED COMPONENTS
-========================= */
+.safe-routes-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 18px 32px;
+}
+
+/* Mobile-only controls hidden on desktop */
+.mobile-sheet-toggle,
+.mobile-map-header {
+  display: none;
+}
+
+/* ---------- Back + brand ---------- */
 
 .back-button {
-  border: none;
-  background: transparent;
-  color: var(--primary);
-  font-size: 16px;
-  font-weight: 900;
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--nv-line);
+  background: var(--nv-surface);
+  color: var(--nv-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  margin-bottom: 22px;
-  padding: 0;
+}
+
+.back-button:hover {
+  border-color: var(--nv-primary);
+  color: var(--nv-primary);
 }
 
 .brand-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
+  gap: 12px;
 }
 
 .brand-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
-  background: var(--primary);
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--nv-primary);
   color: #fff;
+  font-size: 1.2rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 23px;
-  font-weight: 900;
   flex-shrink: 0;
-}
-
-.brand-spacer {
-  display: none;
 }
 
 .brand-row h1 {
   margin: 0;
-  color: var(--dark);
-  font-size: 28px;
-  line-height: 1.1;
-  font-weight: 950;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .brand-row p {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 700;
+  margin: 2px 0 0;
+  font-size: 0.8rem;
   line-height: 1.45;
+  color: var(--nv-ink-soft);
 }
 
+.brand-spacer {
+  flex: 1;
+}
+
+/* ---------- Form card ---------- */
+
 .form-card {
-  background: var(--primary-soft-2);
-  border: 1px solid var(--primary-border);
-  border-radius: 22px;
-  padding: 18px;
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--nv-radius);
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-line);
+  box-shadow: var(--nv-shadow);
 }
 
 .form-card label {
-  display: block;
-  color: var(--muted);
-  font-weight: 900;
-  font-size: 13px;
-  margin: 14px 0 8px;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nv-ink-soft);
 }
 
 .form-card label:first-child {
@@ -159,128 +144,137 @@ body {
 .form-card input,
 .form-card select {
   width: 100%;
-  background: #fff;
-  border: 1px solid var(--primary-border);
-  border-radius: 16px;
-  padding: 14px 15px;
-  color: var(--dark);
-  font-size: 15px;
-  font-weight: 800;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--nv-line);
+  background: var(--nv-bg);
+  color: var(--nv-ink);
+  font-size: 0.9rem;
+  font-family: inherit;
   outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.form-card input::placeholder {
+  color: #a89fb5;
 }
 
 .form-card input:focus,
 .form-card select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(237, 35, 79, 0.12);
+  border-color: var(--nv-primary);
+  background: var(--nv-surface);
 }
 
 .button-row {
   display: flex;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .primary-button,
 .secondary-button {
   flex: 1;
-  border-radius: 16px;
-  padding: 14px 12px;
-  font-size: 14px;
-  font-weight: 950;
+  padding: 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
-  transition: 0.18s ease;
+  transition: filter 0.15s ease;
 }
 
 .primary-button {
-  background: var(--primary);
+  border: none;
+  background: var(--nv-primary);
   color: #fff;
-  border: 1px solid var(--primary);
+  box-shadow: 0 8px 18px rgba(91, 42, 134, 0.28);
 }
 
-.primary-button:hover {
-  filter: brightness(0.96);
+.primary-button:hover:not(:disabled) {
+  filter: brightness(1.12);
 }
 
 .secondary-button {
-  background: #fff;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-}
-
-.secondary-button:hover {
-  background: var(--primary-soft);
+  border: 1.5px solid var(--nv-primary);
+  background: transparent;
+  color: var(--nv-primary);
 }
 
 .primary-button:disabled,
 .secondary-button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .small-text {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
+  margin: 6px 0 0;
+  font-size: 0.76rem;
+  color: var(--nv-ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .error-text {
-  margin: 12px 0 0;
-  background: #fff1f3;
-  color: var(--primary);
-  border: 1px solid var(--primary-border);
-  border-radius: 14px;
-  padding: 11px 12px;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.45;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(214, 34, 76, 0.08);
+  border: 1px solid rgba(214, 34, 76, 0.3);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--nv-sos);
 }
 
-/* =========================
-   ROUTE LIST
-========================= */
+/* ---------- Route list ---------- */
 
 .route-list {
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .route-list h2 {
-  margin: 0;
-  color: var(--dark);
-  font-size: 19px;
-  font-weight: 950;
+  margin: 4px 0 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nv-ink-soft);
 }
 
 .route-note {
-  margin: 6px 0 12px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.45;
+  margin: -4px 0 0;
+  font-size: 0.78rem;
+  color: var(--nv-ink-soft);
 }
 
 .route-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
   width: 100%;
+  padding: 14px;
+  border-radius: var(--nv-radius);
+  border: 1.5px solid var(--nv-line);
+  background: var(--nv-surface);
+  font-family: inherit;
   text-align: left;
-  background: var(--primary-soft-2);
-  border: 1px solid var(--primary-border);
-  border-radius: 18px;
-  padding: 15px;
-  margin-top: 10px;
   cursor: pointer;
-  transition: 0.18s ease;
+  box-shadow: var(--nv-shadow);
+  transition: border-color 0.15s ease, transform 0.12s ease;
 }
 
 .route-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(237, 35, 79, 0.12);
+  border-color: rgba(91, 42, 134, 0.45);
+}
+
+.route-card:active {
+  transform: scale(0.985);
 }
 
 .route-card.active {
-  border-color: var(--primary);
-  background: var(--primary-soft);
+  border-color: var(--nv-primary);
+  background: #f6f0fb;
 }
 
 .route-card-top {
@@ -289,332 +283,204 @@ body {
   gap: 10px;
 }
 
-.rank-pill {
-  border-radius: 999px;
-  padding: 5px 9px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 950;
-  flex-shrink: 0;
+.route-card-top strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--nv-ink);
 }
 
-.route-card strong {
-  color: var(--dark);
-  font-size: 15px;
-  font-weight: 950;
+.rank-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .route-card p {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--nv-ink);
+  font-variant-numeric: tabular-nums;
 }
 
-.route-card span:not(.rank-pill) {
-  display: inline-block;
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
+.route-card > span {
+  font-size: 0.72rem;
+  color: var(--nv-ink-soft);
+}
+
+.route-card.active > span {
+  color: var(--nv-primary);
+  font-weight: 600;
 }
 
 .selected-route {
-  margin-top: 14px;
-  color: var(--primary);
-  font-weight: 900;
-  font-size: 14px;
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--nv-primary);
 }
 
-/* =========================
-   MOBILE-ONLY ELEMENTS HIDDEN ON DESKTOP
-========================= */
+/* ---------- Map panel ---------- */
 
-.mobile-map-header,
-.mobile-sheet-toggle {
-  display: none;
+.safe-routes-map-panel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.mobile-back-button {
-  border: none;
-  background: transparent;
-  color: var(--primary);
-  font-size: 34px;
-  line-height: 1;
-  cursor: pointer;
+.safe-routes-map {
+  flex: 1;
+  width: 100%;
+  background: #e9eef2;
 }
 
-.mobile-header-spacer {
-  width: 38px;
-  height: 38px;
+/* Themed Leaflet popups (same as the rest of the app) */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(34, 26, 46, 0.2);
+  font-family: var(--nv-font);
 }
 
-.mobile-sheet-handle {
-  width: 52px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--primary-border);
+.leaflet-popup-content {
+  margin: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--nv-ink);
 }
 
-/* =========================
-   MOBILE APP-LIKE LAYOUT
-   IMPORTANT: only <= 600px
-========================= */
+/* ---------- Focus ---------- */
 
-@media (max-width: 600px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    overflow: hidden;
-    background: #3b3b3b;
-  }
+.safe-routes-page button:focus-visible,
+.safe-routes-page input:focus-visible,
+.safe-routes-page select:focus-visible {
+  outline: 3px solid var(--nv-primary);
+  outline-offset: 2px;
+}
 
-  .safe-routes-page {
-    width: 100vw;
-    height: 100dvh;
-    min-height: 100dvh;
-    overflow: hidden;
-    background: #3b3b3b;
-    display: flex;
-    justify-content: center;
-  }
+/* ============================================================
+   Mobile: full-screen map with a bottom sheet panel
+   ============================================================ */
 
+@media (max-width: 860px) {
   .safe-routes-shell {
     position: relative;
-    width: min(100vw, 430px);
-    height: 100dvh;
-    min-height: 100dvh;
-    display: block;
-    overflow: hidden;
-    background: #fff;
+    flex-direction: column;
   }
 
+  /* Map takes the whole screen behind the sheet */
   .safe-routes-map-panel {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100dvh;
-    min-height: 100dvh;
-    z-index: 1;
-    overflow: hidden;
-    background: #e5e7eb;
-  }
-
-  .safe-routes-map {
-    width: 100%;
-    height: 100dvh;
   }
 
   .mobile-map-header {
-    position: absolute;
-    top: 34px;
-    left: 16px;
-    right: 16px;
-    height: 56px;
-    border-radius: 22px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid var(--primary-border-light);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    z-index: 1000;
-    box-shadow: 0 12px 30px rgba(19, 0, 21, 0.12);
+    gap: 10px;
+    z-index: 500;
+    padding: 12px 14px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    background: var(--nv-surface);
+    border-bottom: 1px solid var(--nv-line);
+    box-shadow: var(--nv-shadow);
+    font-size: 1rem;
   }
 
-  .mobile-map-header strong {
-    color: var(--dark);
-    font-size: 18px;
-    font-weight: 950;
+  .mobile-back-button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--nv-line);
+    background: var(--nv-surface);
+    color: var(--nv-ink);
+    font-size: 1.3rem;
+    line-height: 1;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
+  .mobile-header-spacer {
+    width: 36px;
+    flex-shrink: 0;
+  }
+
+  /* Bottom sheet */
   .safe-routes-panel {
     position: absolute;
-    left: 50%;
-    right: auto;
+    left: 0;
+    right: 0;
     bottom: 0;
-    transform: translateX(-50%);
-
+    z-index: 600;
     width: 100%;
-    height: 52dvh;
-    max-height: 560px;
-
-    z-index: 1001;
-    overflow-y: auto;
-
-    background: #fff;
-    border: 1px solid var(--primary-border-light);
-    border-bottom: none;
-    border-top-left-radius: 30px;
-    border-top-right-radius: 30px;
-
-    padding: 0 20px 34px;
-    box-shadow: 0 -16px 40px rgba(19, 0, 21, 0.16);
-    transition: height 0.28s ease, max-height 0.28s ease;
+    max-height: 62vh;
+    border-right: none;
+    border-radius: 22px 22px 0 0;
+    background: var(--nv-surface);
+    border-top: 1px solid var(--nv-line);
+    box-shadow: 0 -10px 30px rgba(34, 26, 46, 0.18);
+    transition: max-height 0.25s ease;
   }
 
   .safe-routes-panel.collapsed {
-    height: 74px;
-    max-height: 74px;
+    max-height: 56px;
     overflow: hidden;
-    padding-bottom: 0;
-  }
-
-  .safe-routes-panel.collapsed .safe-routes-panel-content {
-    display: none;
   }
 
   .mobile-sheet-toggle {
     position: sticky;
     top: 0;
-    z-index: 3;
-    background: #fff;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 13px 0 10px;
+    gap: 4px;
+    padding: 10px 0 8px;
+    background: var(--nv-surface);
+    border-radius: 22px 22px 0 0;
     cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--nv-ink-soft);
     user-select: none;
   }
 
-  .mobile-sheet-toggle span {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 900;
+  .mobile-sheet-handle {
+    width: 42px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--nv-line);
   }
 
   .safe-routes-panel-content {
-    animation: sheetFadeIn 0.2s ease;
+    padding: 8px 16px calc(28px + env(safe-area-inset-bottom));
   }
 
-  .safe-routes-panel .back-button {
+  /* The sheet has its own brand header on mobile; hide desktop back */
+  .back-button {
     display: none;
   }
 
-  .brand-row {
-    display: grid;
-    grid-template-columns: 56px 1fr 56px;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0 22px;
-    text-align: center;
-  }
-
   .brand-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 18px;
-    font-size: 22px;
-  }
-
-  .brand-spacer {
-    display: block;
-    width: 52px;
-    height: 52px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.05rem;
   }
 
   .brand-row h1 {
-    font-size: 24px;
-    line-height: 1.1;
-    margin: 0;
-  }
-
-  .brand-row p {
-    font-size: 14px;
-    line-height: 1.45;
-    margin: 8px 0 0;
-  }
-
-  .form-card {
-    border-radius: 22px;
-    padding: 18px;
-    margin-bottom: 18px;
-  }
-
-  .form-card label {
-    text-align: center;
-    font-size: 13px;
-    margin: 18px 0 9px;
-  }
-
-  .form-card label:first-child {
-    margin-top: 0;
-  }
-
-  .form-card input,
-  .form-card select {
-    border-radius: 18px;
-    padding: 15px 16px;
-    font-size: 16px;
-  }
-
-  .button-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 18px;
-  }
-
-  .primary-button,
-  .secondary-button {
-    border-radius: 16px;
-    padding: 15px 10px;
-    font-size: 14px;
-  }
-
-  .small-text {
-    text-align: center;
-    margin-top: 10px;
-  }
-
-  .error-text {
-    text-align: center;
-  }
-
-  .route-list {
-    margin-top: 18px;
-  }
-
-  .route-list h2 {
-    text-align: center;
-    font-size: 17px;
-  }
-
-  .route-note {
-    text-align: center;
-  }
-
-  .route-card {
-    border-radius: 18px;
-    padding: 15px;
-  }
-
-  .selected-route {
-    text-align: center;
-    margin-bottom: 20px;
+    font-size: 1.1rem;
   }
 }
 
-@keyframes sheetFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
+/* ---------- Reduced motion ---------- */
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+  .safe-routes-panel {
+    transition: none;
   }
-}
-.safe-routes-panel {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* old Edge/IE */
-}
-
-.safe-routes-panel::-webkit-scrollbar {
-  display: none; /* Chrome, Edge, Safari */
 }
