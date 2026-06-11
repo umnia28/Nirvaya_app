@@ -742,7 +742,10 @@ export default function SosPage() {
     if (level === "low") return "Low Risk Zone";
     return "Unknown Risk Zone";
   };
-
+  const getRiskScoreText = () => {  
+    if (currentRisk?.risk_score == null) return "";
+    return `Risk Score: ${currentRisk.risk_score}`;
+  };
  
 
   const getRiskIconClass = () => {
@@ -939,7 +942,7 @@ export default function SosPage() {
             <div className="card-text-box">
               <p className="location-label">Current area risk</p>
               <p className="location-text">{getRiskDisplayText()}</p>
-              
+              <p className="zone-text">{getRiskScoreText()}</p>
               
             </div>
             {initialRiskLoading ? (
