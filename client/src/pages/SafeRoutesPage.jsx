@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
@@ -12,10 +12,8 @@ import L from "leaflet";
 
 import { getSafeAlternativeRoutesApi } from "../api/routeApi";
 
-
 import "./SafeRoutesPage.css";
 
-const PRIMARY = "#ED234F";
 const DISTRICTS = [
   "Bagerhat",
   "Bandarban",
@@ -83,7 +81,6 @@ const DISTRICTS = [
   "Thakurgaon",
 ];
 
-
 const startIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
@@ -110,7 +107,9 @@ function FitMapToRoutes({ start, destination, routes }) {
     points.push([destination.latitude, destination.longitude]);
 
     routes.forEach((route) => {
-      route.geometry.forEach(([longitude, latitude]) => {
+      const geometry = route.geometry || [];
+
+      geometry.forEach(([longitude, latitude]) => {
         points.push([latitude, longitude]);
       });
     });
@@ -127,6 +126,7 @@ function FitMapToRoutes({ start, destination, routes }) {
 
 export default function SafeRoutesPage() {
   const navigate = useNavigate();
+  const panelRef = useRef(null);
 
   const [destination, setDestination] = useState("");
   const [district, setDistrict] = useState("Dhaka");
@@ -141,9 +141,30 @@ export default function SafeRoutesPage() {
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [error, setError] = useState("");
 
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+
   useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
+
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    panelRef.current?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
+
     getCurrentLocation();
   }, []);
+
+  const togglePanel = () => {
+    setPanelCollapsed((prev) => !prev);
+  };
 
   const getCurrentLocation = () => {
     setLoadingLocation(true);
@@ -224,8 +245,12 @@ export default function SafeRoutesPage() {
       setRoutes(data.routes || []);
       setDestinationLocation(data.destination);
       setSelectedRouteRank(1);
+
+      // On mobile, expand sheet after results are found.
+      setPanelCollapsed(false);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to generate safe routes.");
+      setPanelCollapsed(false);
     } finally {
       setLoadingRoutes(false);
     }
@@ -242,128 +267,159 @@ export default function SafeRoutesPage() {
   return (
     <main className="safe-routes-page">
       <section className="safe-routes-shell">
-        <aside className="safe-routes-panel">
-          <button className="back-button" onClick={() => navigate("/sos")}>
-            ‹ Back
-          </button>
-
-          <div className="brand-row">
-            <div className="brand-icon">N</div>
-
-            <div>
-              <h1>Safe Routes</h1>
-              <p>Enter a destination and get safer route options.</p>
-            </div>
+        <aside
+          className={
+            panelCollapsed
+              ? "safe-routes-panel collapsed"
+              : "safe-routes-panel"
+          }
+          ref={panelRef}
+        >
+          <div className="mobile-sheet-toggle" onClick={togglePanel}>
+            <div className="mobile-sheet-handle" />
+            <span>
+              {panelCollapsed ? "▲ tap to expand" : "▼ tap to collapse"}
+            </span>
           </div>
 
-          <div className="form-card">
-            <label>Your destination</label>
-            <input
-              value={destination}
-              onChange={(event) => setDestination(event.target.value)}
-              placeholder="Example: Mirpur 10, Dhaka"
-            />
+          <div className="safe-routes-panel-content">
+            <button className="back-button" onClick={() => navigate("/sos")}>
+              ‹ Back
+            </button>
 
-            <label>District used for risk model</label>
-            <select
-              value={district}
-              onChange={(event) => setDistrict(event.target.value)}
-            >
-              {DISTRICTS.map((item) => (
-                <option value={item} key={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+            <div className="brand-row">
+              <div className="brand-icon">N</div>
 
-            <div className="button-row">
-              <button
-                className="secondary-button"
-                onClick={getCurrentLocation}
-                disabled={loadingLocation}
-              >
-                {loadingLocation ? "Locating..." : "Use Current Location"}
-              </button>
+              <div>
+                <h1>Safe Routes</h1>
+                <p>Enter a destination and get safer route options.</p>
+              </div>
 
-              <button
-                className="primary-button"
-                onClick={handleFindRoutes}
-                disabled={loadingRoutes}
-              >
-                {loadingRoutes ? "Finding..." : "Find Routes"}
-              </button>
+              <div className="brand-spacer" />
             </div>
 
-            {currentLocation && (
-              <p className="small-text">
-                Start: {currentLocation.latitude.toFixed(5)},{" "}
-                {currentLocation.longitude.toFixed(5)}
-              </p>
-            )}
+            <div className="form-card">
+              <label>Your destination</label>
+              <input
+                value={destination}
+                onChange={(event) => {
+                  setDestination(event.target.value);
+                  setRoutes([]);
+                  setDestinationLocation(null);
+                }}
+                placeholder="Example: Mirpur 10, Dhaka"
+              />
 
-            {destinationLocation && (
-              <p className="small-text">
-                Destination: {destinationLocation.label}
-              </p>
-            )}
+              <label>District used for risk model</label>
+              <select
+                value={district}
+                onChange={(event) => setDistrict(event.target.value)}
+              >
+                {DISTRICTS.map((item) => (
+                  <option value={item} key={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
 
-            {error && <p className="error-text">{error}</p>}
-          </div>
-
-          {routes.length > 0 && (
-            <div className="route-list">
-              <h2>Suggested routes</h2>
-              <p className="route-note">
-                Routes are ranked by safety. Risk score is hidden from users.
-              </p>
-
-              {routes.map((route) => (
+              <div className="button-row">
                 <button
-                  key={route.safety_rank}
-                  className={
-                    selectedRouteRank === route.safety_rank
-                      ? "route-card active"
-                      : "route-card"
-                  }
-                  onClick={() => setSelectedRouteRank(route.safety_rank)}
+                  className="secondary-button"
+                  onClick={getCurrentLocation}
+                  disabled={loadingLocation}
                 >
-                  <div className="route-card-top">
-                    <span
-                      className="rank-pill"
-                      style={{
-                        backgroundColor: getRouteColor(route.safety_rank),
-                      }}
-                    >
-                      #{route.safety_rank}
-                    </span>
-
-                    <strong>{route.label}</strong>
-                  </div>
-
-                  <p>
-                    {formatDistance(route.distance_meters)} •{" "}
-                    {formatDuration(route.duration_seconds)}
-                  </p>
-
-                  <span>Tap to highlight this route</span>
+                  {loadingLocation ? "Locating..." : "Use Current Location"}
                 </button>
-              ))}
 
-              {selectedRoute && (
-                <p className="selected-route">
-                  Selected: {selectedRoute.label}
+                <button
+                  className="primary-button"
+                  onClick={handleFindRoutes}
+                  disabled={loadingRoutes}
+                >
+                  {loadingRoutes ? "Finding..." : "Find Routes"}
+                </button>
+              </div>
+
+              {currentLocation && (
+                <p className="small-text">
+                  Start: {currentLocation.latitude.toFixed(5)},{" "}
+                  {currentLocation.longitude.toFixed(5)}
                 </p>
               )}
+
+              {destinationLocation && (
+                <p className="small-text">
+                  Destination: {destinationLocation.label}
+                </p>
+              )}
+
+              {error && <p className="error-text">{error}</p>}
             </div>
-          )}
+
+            {routes.length > 0 && (
+              <div className="route-list">
+                <h2>Suggested routes</h2>
+                <p className="route-note">
+                  Routes are ranked by safety.
+                </p>
+
+                {routes.map((route) => (
+                  <button
+                    key={route.safety_rank}
+                    className={
+                      selectedRouteRank === route.safety_rank
+                        ? "route-card active"
+                        : "route-card"
+                    }
+                    onClick={() => setSelectedRouteRank(route.safety_rank)}
+                  >
+                    <div className="route-card-top">
+                      <span
+                        className="rank-pill"
+                        style={{
+                          backgroundColor: getRouteColor(route.safety_rank),
+                        }}
+                      >
+                        #{route.safety_rank}
+                      </span>
+
+                      <strong>{route.label}</strong>
+                    </div>
+
+                    <p>
+                      {formatDistance(route.distance_meters)} •{" "}
+                      {formatDuration(route.duration_seconds)}
+                    </p>
+
+                    <span>Tap to highlight this route</span>
+                  </button>
+                ))}
+
+                {selectedRoute && (
+                  <p className="selected-route">
+                    Selected: {selectedRoute.label}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </aside>
 
         <section className="safe-routes-map-panel">
-          <MapContainer
-            center={mapCenter}
-            zoom={13}
-            className="safe-routes-map"
-          >
+          <div className="mobile-map-header">
+            <button
+              className="mobile-back-button"
+              onClick={() => navigate("/sos")}
+            >
+              ‹
+            </button>
+
+            <strong>Safe Routes</strong>
+
+            <span className="mobile-header-spacer" />
+          </div>
+
+          <MapContainer center={mapCenter} zoom={13} className="safe-routes-map">
             <TileLayer
               attribution="&copy; OpenStreetMap contributors"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -393,7 +449,7 @@ export default function SafeRoutesPage() {
             {routes.map((route) => (
               <Polyline
                 key={route.safety_rank}
-                positions={convertRouteGeometry(route.geometry)}
+                positions={convertRouteGeometry(route.geometry || [])}
                 pathOptions={{
                   color: getRouteColor(route.safety_rank),
                   weight: selectedRouteRank === route.safety_rank ? 7 : 4,

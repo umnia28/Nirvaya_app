@@ -743,15 +743,7 @@ export default function SosPage() {
     return "Unknown Risk Zone";
   };
 
-  const getRiskSubtitle = () => {
-    if (initialRiskLoading) return "Fetching your current location once";
-    if (!currentRisk) return "Waiting for location check";
-    if (currentRisk.message) return currentRisk.message;
-    const score = currentRisk.risk_score ?? 0;
-    const district =
-      currentRisk.district || selectedDistrict || "Unknown";
-    return `${district} • Score: ${Number(score).toFixed(1)}`;
-  };
+ 
 
   const getRiskIconClass = () => {
     const level = currentRisk?.risk_level;
@@ -947,13 +939,8 @@ export default function SosPage() {
             <div className="card-text-box">
               <p className="location-label">Current area risk</p>
               <p className="location-text">{getRiskDisplayText()}</p>
-              <p className="zone-text">{getRiskSubtitle()}</p>
-              {currentCoords && (
-                <p className="coord-text">
-                  {currentCoords.latitude.toFixed(5)},{" "}
-                  {currentCoords.longitude.toFixed(5)}
-                </p>
-              )}
+              
+              
             </div>
             {initialRiskLoading ? (
               <span className="mini-loader" />
@@ -1065,6 +1052,19 @@ export default function SosPage() {
               <p className="card-title">Safe Routes Recommendation</p>
               <p className="card-subtitle">
                 Find safer paths ranked by Nirvaya.
+              </p>
+            </div>
+            <span className="arrow">›</span>
+          </button>
+          <button
+            className="route-tab"
+            onClick={() => navigate("/heatmap")}
+          >
+            <div className="icon-route" />
+            <div className="card-text-box">
+              <p className="card-title">Heatmap</p>
+              <p className="card-subtitle">
+                View safety data on an live heatmap.
               </p>
             </div>
             <span className="arrow">›</span>

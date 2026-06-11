@@ -4,6 +4,7 @@ import SetupPage from "./pages/SetupPage";
 import SosPage from "./pages/SosPage";
 import TrackingPage from "./pages/TrackingPage";  
 import SafeRoutesPage from "./pages/SafeRoutesPage";
+import HeatmapPage from "./pages/HeatmapPage";
 
 import { isSetupComplete } from "./services/localProfileService";
 
@@ -50,6 +51,7 @@ export default function App() {
         />
 
         <Route path="/track/:publicToken" element={<TrackingPage />} />
+        <Route path="/heatmap" element={<HeatmapPage />} />
       </Routes>
     </BrowserRouter>
   );

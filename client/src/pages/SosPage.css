@@ -29,7 +29,7 @@
 .name {
   color: #130015;
   font-size: 19px;
-  font-weight: 900;
+  font-weight:700;
   margin: 4px 0 0;
 }
 
@@ -47,7 +47,7 @@
 
 .avatar-text {
   color: #ed234f;
-  font-weight: 900;
+  font-weight: 700;
   font-size: 16px;
 }
 
@@ -63,7 +63,7 @@
   display: grid;
   place-items: center;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .active-badge {
@@ -79,7 +79,7 @@
 
 .title {
   font-size: 27px;
-  font-weight: 900;
+  font-weight: 700;
   color: #130015;
   margin: 0;
   text-align: center;
@@ -130,7 +130,7 @@
   background: #ed234f;
   color: #fff;
   font-size: 28px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 2px;
   cursor: pointer;
   box-shadow: 0 12px 30px rgba(237, 35, 79, 0.35);
@@ -198,7 +198,7 @@
   border-radius: 16px;
   padding: 14px;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   margin-bottom: 10px;
 }
@@ -272,7 +272,7 @@
 .card-title {
   color: #130015;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -290,13 +290,13 @@
 
 .location-text {
   color: #130015;
-  font-weight: 800;
+  font-weight: 700;
   margin: 4px 0 0;
 }
 
 .tracking-link {
   color: #130015;
-  font-weight: 800;
+  font-weight: 700;
   margin: 4px 0 0;
   font-size: 13px;
   overflow-wrap: anywhere;
@@ -322,7 +322,7 @@
   color: #ed234f;
   border-radius: 12px;
   padding: 9px 12px;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   margin-left: 10px;
 }
@@ -333,7 +333,7 @@
   color: #ed234f;
   border-radius: 999px;
   padding: 10px 15px;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   margin-left: 10px;
 }
@@ -346,7 +346,7 @@
 .arrow {
   color: #ed234f;
   font-size: 32px;
-  font-weight: 900;
+  font-weight: 700;
   margin-left: 10px;
 }
 

@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import sosRoutes from "./routes/sosRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
 import routeRoutes from "./routes/routeRoutes.js";
+import heatmapRoutes from "./routes/heatmapRoutes.js";
 
 import { startLocationCleanupJob } from "./jobs/locationCleanupJob.js";
 
@@ -71,7 +72,7 @@ app.get("/", (req, res) => {
 app.use("/api/sos", sosRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/routes", routeRoutes);
-
+app.use("/api/heatmap", heatmapRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
