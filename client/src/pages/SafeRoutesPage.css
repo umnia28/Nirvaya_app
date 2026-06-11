@@ -1,30 +1,50 @@
 /* ============================================================
-   Nirvaya — Safe Routes page
-   Same design system as SosPage.css (plum / lavender / Inter).
+   Nirvaya — Safe Routes page · "Rose Quartz" theme
+   Same design system as SosPage.css:
+   blush pink, Fraunces display headings, living motion.
    Desktop: side panel + map. Mobile: full map + bottom sheet.
    ============================================================ */
 
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;600;700&display=swap");
+
 :root {
-  --nv-bg: #f6f4f7;
+  --nv-bg: #fbf4f6;
   --nv-surface: #ffffff;
-  --nv-ink: #221a2e;
-  --nv-ink-soft: #6f6580;
-  --nv-line: #e7e2ec;
-  --nv-primary: #5b2a86;
-  --nv-sos: #d6224c;
-  --nv-safe: #1f8a5b;
+  --nv-ink: #3c1f2d;
+  --nv-ink-soft: #97707f;
+  --nv-line: #f1dde4;
+  --nv-primary: #b13a66;
+  --nv-primary-deep: #8d2a50;
+  --nv-sos: #e11d48;
+  --nv-sos-deep: #9f1239;
+  --nv-safe: #2a9d6e;
   --nv-warn: #e08700;
-  --nv-radius: 16px;
-  --nv-shadow: 0 6px 20px rgba(34, 26, 46, 0.08);
+  --nv-critical: #881337;
+
+  --nv-radius: 18px;
+  --nv-shadow: 0 8px 24px rgba(60, 31, 45, 0.07);
+  --nv-shadow-lift: 0 14px 34px rgba(60, 31, 45, 0.12);
+
   --nv-font: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
+  --nv-display: "Fraunces", "Noto Sans Bengali", Georgia, serif;
+
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 .safe-routes-page {
   height: 100vh;
   height: 100dvh;
-  background: var(--nv-bg);
   font-family: var(--nv-font);
   color: var(--nv-ink);
+  background:
+    radial-gradient(560px 380px at 92% -8%, rgba(225, 29, 72, 0.06), transparent 64%),
+    radial-gradient(520px 420px at -12% 30%, rgba(177, 58, 102, 0.07), transparent 60%),
+    var(--nv-bg);
   overflow: hidden;
 }
 
@@ -34,13 +54,31 @@
   width: 100%;
 }
 
+/* ============================================================
+   Entrance — panel content rises in softly
+   ============================================================ */
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.safe-routes-panel-content > * {
+  animation: rise-in 0.5s var(--ease-soft) backwards;
+}
+
+.safe-routes-panel-content > *:nth-child(1) { animation-delay: 0.04s; }
+.safe-routes-panel-content > *:nth-child(2) { animation-delay: 0.1s; }
+.safe-routes-panel-content > *:nth-child(3) { animation-delay: 0.16s; }
+.safe-routes-panel-content > *:nth-child(n + 4) { animation-delay: 0.22s; }
+
 /* ---------- Panel (desktop sidebar) ---------- */
 
 .safe-routes-panel {
   width: 390px;
   flex-shrink: 0;
   overflow-y: auto;
-  background: var(--nv-bg);
+  background: transparent;
   border-right: 1px solid var(--nv-line);
 }
 
@@ -48,7 +86,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 20px 18px 32px;
+  padding: 22px 18px 34px;
 }
 
 /* Mobile-only controls hidden on desktop */
@@ -60,54 +98,64 @@
 /* ---------- Back + brand ---------- */
 
 .back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   align-self: flex-start;
-  padding: 7px 14px;
+  padding: 8px 15px;
   border-radius: 999px;
   border: 1px solid var(--nv-line);
   background: var(--nv-surface);
   color: var(--nv-ink);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+  box-shadow: var(--nv-shadow);
+  transition: transform 0.18s var(--ease-spring), border-color 0.18s var(--ease-soft),
+    color 0.18s var(--ease-soft);
 }
 
 .back-button:hover {
   border-color: var(--nv-primary);
   color: var(--nv-primary);
+  transform: translateX(-2px);
 }
 
 .brand-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
 }
 
 .brand-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  background: var(--nv-primary);
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: linear-gradient(140deg, var(--nv-primary), var(--nv-primary-deep));
   color: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-family: var(--nv-display);
+  font-size: 1.35rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(177, 58, 102, 0.32);
 }
 
 .brand-row h1 {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--nv-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .brand-row p {
   margin: 2px 0 0;
   font-size: 0.8rem;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--nv-ink-soft);
 }
 
@@ -121,18 +169,23 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
+  padding: 17px;
   border-radius: var(--nv-radius);
   background: var(--nv-surface);
   border: 1px solid var(--nv-line);
   box-shadow: var(--nv-shadow);
+  transition: box-shadow 0.25s var(--ease-soft);
+}
+
+.form-card:focus-within {
+  box-shadow: var(--nv-shadow-lift);
 }
 
 .form-card label {
-  margin-top: 6px;
-  font-size: 0.7rem;
+  margin-top: 7px;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--nv-ink-soft);
 }
@@ -144,31 +197,33 @@
 .form-card input,
 .form-card select {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 12px 15px;
+  border-radius: 13px;
   border: 1.5px solid var(--nv-line);
-  background: var(--nv-bg);
+  background: #faf3f6;
   color: var(--nv-ink);
   font-size: 0.9rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.2s var(--ease-soft), background 0.2s var(--ease-soft),
+    box-shadow 0.2s var(--ease-soft);
 }
 
 .form-card input::placeholder {
-  color: #a89fb5;
+  color: #c3a4b1;
 }
 
 .form-card input:focus,
 .form-card select:focus {
   border-color: var(--nv-primary);
   background: var(--nv-surface);
+  box-shadow: 0 0 0 4px rgba(177, 58, 102, 0.1);
 }
 
 .button-row {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 11px;
 }
 
 .primary-button,
@@ -176,28 +231,46 @@
   flex: 1;
   padding: 12px;
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: transform 0.18s var(--ease-spring), filter 0.18s var(--ease-soft),
+    background 0.18s var(--ease-soft), color 0.18s var(--ease-soft),
+    box-shadow 0.18s var(--ease-soft);
 }
 
 .primary-button {
   border: none;
-  background: var(--nv-primary);
+  background: linear-gradient(140deg, #c84b78, var(--nv-primary-deep));
   color: #fff;
-  box-shadow: 0 8px 18px rgba(91, 42, 134, 0.28);
+  box-shadow: 0 10px 22px rgba(177, 58, 102, 0.32);
 }
 
 .primary-button:hover:not(:disabled) {
-  filter: brightness(1.12);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(177, 58, 102, 0.4);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .secondary-button {
   border: 1.5px solid var(--nv-primary);
   background: transparent;
   color: var(--nv-primary);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--nv-primary);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.secondary-button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .primary-button:disabled,
@@ -215,13 +288,14 @@
 
 .error-text {
   margin: 8px 0 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(214, 34, 76, 0.08);
-  border: 1px solid rgba(214, 34, 76, 0.3);
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: rgba(225, 29, 72, 0.07);
+  border: 1px solid rgba(225, 29, 72, 0.3);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--nv-sos);
+  animation: rise-in 0.3s var(--ease-soft);
 }
 
 /* ---------- Route list ---------- */
@@ -230,15 +304,27 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  animation: rise-in 0.45s var(--ease-soft);
 }
 
 .route-list h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 4px 0 0;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--nv-ink-soft);
+}
+
+/* Fine rose line trailing the heading, same as the SOS page */
+.route-list h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--nv-line), transparent);
 }
 
 .route-note {
@@ -253,7 +339,7 @@
   align-items: flex-start;
   gap: 5px;
   width: 100%;
-  padding: 14px;
+  padding: 15px;
   border-radius: var(--nv-radius);
   border: 1.5px solid var(--nv-line);
   background: var(--nv-surface);
@@ -261,11 +347,19 @@
   text-align: left;
   cursor: pointer;
   box-shadow: var(--nv-shadow);
-  transition: border-color 0.15s ease, transform 0.12s ease;
+  animation: rise-in 0.4s var(--ease-soft) backwards;
+  transition: border-color 0.2s var(--ease-soft), transform 0.18s var(--ease-spring),
+    box-shadow 0.2s var(--ease-soft), background 0.2s var(--ease-soft);
 }
 
+.route-card:nth-child(3) { animation-delay: 0.05s; }
+.route-card:nth-child(4) { animation-delay: 0.12s; }
+.route-card:nth-child(5) { animation-delay: 0.19s; }
+
 .route-card:hover {
-  border-color: rgba(91, 42, 134, 0.45);
+  border-color: rgba(177, 58, 102, 0.45);
+  transform: translateY(-2px);
+  box-shadow: var(--nv-shadow-lift);
 }
 
 .route-card:active {
@@ -274,7 +368,8 @@
 
 .route-card.active {
   border-color: var(--nv-primary);
-  background: #f6f0fb;
+  background: linear-gradient(180deg, #fdf6f9, #fbeff4);
+  box-shadow: 0 10px 26px rgba(177, 58, 102, 0.16);
 }
 
 .route-card-top {
@@ -287,15 +382,17 @@
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--nv-ink);
+  letter-spacing: -0.01em;
 }
 
 .rank-pill {
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
   color: #fff;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.04em;
+  box-shadow: 0 3px 8px rgba(60, 31, 45, 0.16);
 }
 
 .route-card p {
@@ -309,6 +406,7 @@
 .route-card > span {
   font-size: 0.72rem;
   color: var(--nv-ink-soft);
+  transition: color 0.2s var(--ease-soft);
 }
 
 .route-card.active > span {
@@ -336,13 +434,13 @@
 .safe-routes-map {
   flex: 1;
   width: 100%;
-  background: #e9eef2;
+  background: #f2e9ed; /* blush-tinted while tiles load */
 }
 
 /* Themed Leaflet popups (same as the rest of the app) */
 .leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(34, 26, 46, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(60, 31, 45, 0.2);
   font-family: var(--nv-font);
 }
 
@@ -385,28 +483,41 @@
     z-index: 500;
     padding: 12px 14px;
     padding-top: calc(12px + env(safe-area-inset-top));
-    background: var(--nv-surface);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--nv-line);
     box-shadow: var(--nv-shadow);
     font-size: 1rem;
   }
 
+  .mobile-map-header strong {
+    font-family: var(--nv-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
   .mobile-back-button {
-    width: 36px;
-    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     border: 1px solid var(--nv-line);
     background: var(--nv-surface);
     color: var(--nv-ink);
-    font-size: 1.3rem;
-    line-height: 1;
     font-family: inherit;
     cursor: pointer;
     flex-shrink: 0;
+    transition: transform 0.18s var(--ease-spring), border-color 0.18s var(--ease-soft);
+  }
+
+  .mobile-back-button:active {
+    transform: scale(0.92);
   }
 
   .mobile-header-spacer {
-    width: 36px;
+    width: 38px;
     flex-shrink: 0;
   }
 
@@ -420,15 +531,15 @@
     width: 100%;
     max-height: 62vh;
     border-right: none;
-    border-radius: 22px 22px 0 0;
+    border-radius: 26px 26px 0 0;
     background: var(--nv-surface);
     border-top: 1px solid var(--nv-line);
-    box-shadow: 0 -10px 30px rgba(34, 26, 46, 0.18);
-    transition: max-height 0.25s ease;
+    box-shadow: 0 -14px 38px rgba(60, 31, 45, 0.2);
+    transition: max-height 0.32s var(--ease-spring);
   }
 
   .safe-routes-panel.collapsed {
-    max-height: 56px;
+    max-height: 58px;
     overflow: hidden;
   }
 
@@ -442,7 +553,7 @@
     gap: 4px;
     padding: 10px 0 8px;
     background: var(--nv-surface);
-    border-radius: 22px 22px 0 0;
+    border-radius: 26px 26px 0 0;
     cursor: pointer;
     font-size: 0.72rem;
     font-weight: 600;
@@ -450,15 +561,27 @@
     user-select: none;
   }
 
+  .mobile-sheet-toggle span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   .mobile-sheet-handle {
-    width: 42px;
+    width: 44px;
     height: 5px;
     border-radius: 999px;
     background: var(--nv-line);
+    transition: background 0.2s var(--ease-soft), width 0.2s var(--ease-soft);
+  }
+
+  .mobile-sheet-toggle:hover .mobile-sheet-handle {
+    background: var(--nv-primary);
+    width: 52px;
   }
 
   .safe-routes-panel-content {
-    padding: 8px 16px calc(28px + env(safe-area-inset-bottom));
+    padding: 8px 16px calc(30px + env(safe-area-inset-bottom));
   }
 
   /* The sheet has its own brand header on mobile; hide desktop back */
@@ -467,20 +590,35 @@
   }
 
   .brand-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.05rem;
+    width: 42px;
+    height: 42px;
+    font-size: 1.15rem;
   }
 
   .brand-row h1 {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
 }
 
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .safe-routes-panel {
+  .safe-routes-panel,
+  .mobile-sheet-handle {
     transition: none;
+  }
+
+  .safe-routes-panel-content > *,
+  .route-card,
+  .route-list,
+  .error-text {
+    animation: none;
+  }
+
+  .route-card:hover,
+  .primary-button:hover:not(:disabled),
+  .secondary-button:hover:not(:disabled),
+  .back-button:hover {
+    transform: none;
   }
 }

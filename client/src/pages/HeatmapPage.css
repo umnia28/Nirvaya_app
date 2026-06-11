@@ -1,84 +1,125 @@
-* ============================================================
-   AI Safety Heatmap — stylesheet
-   Palette: ink sidebar, paper map, risk colors as the accents
+/* ============================================================
+   Nirvaya — AI Safety Heatmap · "Rose Quartz" theme
+   Same design system as SosPage.css / SafeRoutesPage.css:
+   blush pink, Fraunces display headings, living motion.
+   The map stays quiet so the risk colors carry the data.
    ============================================================ */
 
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;600;700&display=swap");
+
 :root {
-  --hm-ink: #131a22;        /* sidebar background */
-  --hm-ink-soft: #1d2733;   /* cards on the sidebar */
-  --hm-line: rgba(255, 255, 255, 0.08);
-  --hm-text: #e8edf2;
-  --hm-text-dim: #94a3b3;
-  --hm-accent: #f4a900;     /* amber — drawn from the risk scale */
-  --hm-critical: #b3001b;
-  --hm-high: #e85d04;
-  --hm-medium: #f4a900;
-  --hm-low: #2f9e62;
-  --hm-radius: 12px;
-  --hm-font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --nv-bg: #fbf4f6;
+  --nv-surface: #ffffff;
+  --nv-ink: #3c1f2d;
+  --nv-ink-soft: #97707f;
+  --nv-line: #f1dde4;
+  --nv-primary: #b13a66;
+  --nv-primary-deep: #8d2a50;
+  --nv-sos: #e11d48;
+  --nv-safe: #2a9d6e;
+  --nv-warn: #e08700;
+  --nv-critical: #881337;
+
+  --nv-radius: 18px;
+  --nv-shadow: 0 8px 24px rgba(60, 31, 45, 0.07);
+  --nv-shadow-lift: 0 14px 34px rgba(60, 31, 45, 0.12);
+
+  --nv-font: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
+  --nv-display: "Fraunces", "Noto Sans Bengali", Georgia, serif;
+
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 .heatmap-page {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
-  font-family: var(--hm-font);
-  background: var(--hm-ink);
+  font-family: var(--nv-font);
+  color: var(--nv-ink);
+  background:
+    radial-gradient(560px 380px at 0% -8%, rgba(225, 29, 72, 0.06), transparent 64%),
+    radial-gradient(520px 420px at 18% 110%, rgba(177, 58, 102, 0.07), transparent 60%),
+    var(--nv-bg);
   overflow: hidden;
 }
+
+/* ============================================================
+   Entrance — sidebar content rises in softly
+   ============================================================ */
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.heatmap-sidebar > * {
+  animation: rise-in 0.5s var(--ease-soft) backwards;
+}
+
+.heatmap-sidebar > *:nth-child(1) { animation-delay: 0.04s; }
+.heatmap-sidebar > *:nth-child(2) { animation-delay: 0.1s; }
+.heatmap-sidebar > *:nth-child(3) { animation-delay: 0.16s; }
+.heatmap-sidebar > *:nth-child(4) { animation-delay: 0.22s; }
+.heatmap-sidebar > *:nth-child(n + 5) { animation-delay: 0.28s; }
 
 /* ---------- Sidebar ---------- */
 
 .heatmap-sidebar {
-  width: 320px;
+  width: 330px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 26px 22px;
-  background: var(--hm-ink);
-  color: var(--hm-text);
+  gap: 20px;
+  padding: 26px 20px;
+  background: transparent;
   overflow-y: auto;
-  border-right: 1px solid var(--hm-line);
+  border-right: 1px solid var(--nv-line);
 }
 
 .sidebar-header h2 {
   margin: 10px 0 6px;
-  font-size: 1.35rem;
+  font-family: var(--nv-display);
+  font-size: 1.45rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
 .heatmap-subtitle {
   margin: 0;
   font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--hm-text-dim);
+  line-height: 1.55;
+  color: var(--nv-ink-soft);
 }
 
 .live-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--hm-accent);
+  color: var(--nv-sos);
 }
 
 .live-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--hm-accent);
-  animation: pulse 2s ease-in-out infinite;
+  background: var(--nv-sos);
+  animation: live-pulse 2s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 169, 0, 0.45); }
-  50% { box-shadow: 0 0 0 6px rgba(244, 169, 0, 0); }
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+  50% { box-shadow: 0 0 0 7px rgba(225, 29, 72, 0); }
 }
 
 /* ---------- Sections ---------- */
@@ -87,25 +128,32 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 16px;
+  border-radius: var(--nv-radius);
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-line);
+  box-shadow: var(--nv-shadow);
 }
 
 .section-label {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--hm-text-dim);
+  color: var(--nv-ink-soft);
 }
 
 .zone-total {
   font-style: normal;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
+  font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--hm-text);
+  color: var(--nv-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- District chips ---------- */
@@ -117,35 +165,36 @@
 }
 
 .district-button {
-  padding: 6px 12px;
+  padding: 7px 13px;
   border-radius: 999px;
-  border: 1px solid var(--hm-line);
-  background: transparent;
-  color: var(--hm-text-dim);
+  border: 1px solid var(--nv-line);
+  background: #faf3f6;
+  color: var(--nv-ink-soft);
   font-size: 0.78rem;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.18s var(--ease-soft), color 0.18s var(--ease-soft),
+    border-color 0.18s var(--ease-soft), transform 0.18s var(--ease-spring),
+    box-shadow 0.18s var(--ease-soft);
 }
 
 .district-button:hover {
-  color: var(--hm-text);
-  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--nv-primary);
+  border-color: rgba(177, 58, 102, 0.4);
+  transform: translateY(-1px);
+}
+
+.district-button:active {
+  transform: scale(0.95);
 }
 
 .district-button.active {
-  background: var(--hm-accent);
-  border-color: var(--hm-accent);
-  color: #1a1200;
-  font-weight: 600;
-}
-
-.district-button:focus-visible,
-.refresh-button:focus-visible,
-.error-retry:focus-visible {
-  outline: 2px solid var(--hm-accent);
-  outline-offset: 2px;
+  background: linear-gradient(140deg, #c84b78, var(--nv-primary-deep));
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(177, 58, 102, 0.32);
 }
 
 /* ---------- Risk distribution bar + stats ---------- */
@@ -155,13 +204,13 @@
   height: 10px;
   border-radius: 999px;
   overflow: hidden;
-  background: var(--hm-ink-soft);
+  background: #f3e6eb;
 }
 
 .risk-bar-segment {
   display: block;
   height: 100%;
-  transition: width 0.4s ease;
+  transition: width 0.5s var(--ease-soft);
 }
 
 .stat-list {
@@ -178,7 +227,7 @@
   gap: 10px;
   padding: 9px 2px;
   font-size: 0.85rem;
-  border-bottom: 1px solid var(--hm-line);
+  border-bottom: 1px solid var(--nv-line);
 }
 
 .stat-row:last-child {
@@ -187,12 +236,13 @@
 
 .stat-name {
   flex: 1;
-  color: var(--hm-text-dim);
+  color: var(--nv-ink-soft);
 }
 
 .stat-row strong {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--nv-ink);
 }
 
 .legend-dot {
@@ -213,20 +263,28 @@
 
 .refresh-button {
   width: 100%;
-  padding: 11px;
-  border-radius: var(--hm-radius);
+  padding: 13px;
+  border-radius: 999px;
   border: none;
-  background: var(--hm-accent);
-  color: #1a1200;
+  background: linear-gradient(140deg, #c84b78, var(--nv-primary-deep));
+  color: #fff;
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  box-shadow: 0 10px 22px rgba(177, 58, 102, 0.32);
+  transition: transform 0.18s var(--ease-spring), filter 0.18s var(--ease-soft),
+    box-shadow 0.18s var(--ease-soft);
 }
 
 .refresh-button:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(177, 58, 102, 0.4);
+}
+
+.refresh-button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .refresh-button:disabled {
@@ -237,39 +295,61 @@
 .updated-text {
   margin: 0;
   font-size: 0.72rem;
-  color: var(--hm-text-dim);
+  color: var(--nv-ink-soft);
   text-align: center;
 }
 
 /* ---------- Error state ---------- */
 
 .error-box {
-  padding: 12px 14px;
-  border-radius: var(--hm-radius);
-  background: rgba(179, 0, 27, 0.14);
-  border: 1px solid rgba(179, 0, 27, 0.45);
+  padding: 13px 15px;
+  border-radius: var(--nv-radius);
+  background: rgba(225, 29, 72, 0.07);
+  border: 1px solid rgba(225, 29, 72, 0.3);
   font-size: 0.8rem;
   line-height: 1.5;
-  color: #ffd9de;
+  color: var(--nv-sos);
+  animation: rise-in 0.3s var(--ease-soft);
 }
 
 .error-box strong {
   display: block;
-  color: #fff;
+  color: var(--nv-ink);
   margin-bottom: 2px;
 }
 
 .error-retry {
   display: inline-block;
-  margin-top: 8px;
-  padding: 5px 12px;
+  margin-top: 9px;
+  padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1.5px solid var(--nv-sos);
   background: transparent;
-  color: #fff;
+  color: var(--nv-sos);
   font-size: 0.75rem;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
+  transition: background 0.18s var(--ease-soft), color 0.18s var(--ease-soft),
+    transform 0.18s var(--ease-spring);
+}
+
+.error-retry:hover {
+  background: var(--nv-sos);
+  color: #fff;
+}
+
+.error-retry:active {
+  transform: scale(0.95);
+}
+
+/* ---------- Focus ---------- */
+
+.district-button:focus-visible,
+.refresh-button:focus-visible,
+.error-retry:focus-visible {
+  outline: 3px solid var(--nv-primary);
+  outline-offset: 2px;
 }
 
 /* ---------- Map ---------- */
@@ -283,7 +363,7 @@
 .heatmap-map {
   height: 100%;
   width: 100%;
-  background: #e9eef2; /* matches CARTO light tiles while loading */
+  background: #f2e9ed; /* blush-tinted while tiles load */
 }
 
 /* First-load overlay (map stays mounted underneath) */
@@ -296,19 +376,25 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(233, 238, 242, 0.72);
-  backdrop-filter: blur(3px);
-  color: #2b3540;
+  background: rgba(251, 244, 246, 0.74);
+  backdrop-filter: blur(4px);
+  color: var(--nv-ink);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
+  animation: fade-in 0.25s var(--ease-soft);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .loader {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 3px solid rgba(43, 53, 64, 0.18);
-  border-top-color: var(--hm-accent);
+  border: 3px solid rgba(177, 58, 102, 0.18);
+  border-top-color: var(--nv-primary);
   animation: spin 0.8s linear infinite;
 }
 
@@ -319,47 +405,56 @@
 /* Background-refresh toast (doesn't block the map) */
 .map-toast {
   position: absolute;
-  top: 14px;
+  top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  padding: 7px 16px;
+  padding: 8px 18px;
   border-radius: 999px;
-  background: rgba(19, 26, 34, 0.88);
-  color: var(--hm-text);
+  background: rgba(60, 31, 45, 0.88);
+  color: #fceef2;
   font-size: 0.78rem;
-  font-weight: 500;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+  box-shadow: 0 8px 22px rgba(60, 31, 45, 0.3);
+  animation: toast-drop 0.32s var(--ease-spring);
+}
+
+@keyframes toast-drop {
+  from { transform: translate(-50%, -14px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
 }
 
 /* ---------- Popup ---------- */
 
 .leaflet-popup-content-wrapper {
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(15, 23, 32, 0.22);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(60, 31, 45, 0.2);
 }
 
 .leaflet-popup-content {
   margin: 14px 16px;
-  font-family: var(--hm-font);
+  font-family: var(--nv-font);
 }
 
 .popup-content h3 {
   margin: 8px 0 10px;
-  font-size: 1rem;
+  font-family: var(--nv-display);
+  font-size: 1.05rem;
+  font-weight: 700;
   letter-spacing: -0.01em;
-  color: #131a22;
+  color: var(--nv-ink);
 }
 
 .popup-risk-tag {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
   color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  box-shadow: 0 3px 8px rgba(60, 31, 45, 0.18);
 }
 
 .popup-content dl {
@@ -377,13 +472,13 @@
 }
 
 .popup-content dt {
-  color: #6b7a88;
+  color: var(--nv-ink-soft);
 }
 
 .popup-content dd {
   margin: 0;
-  font-weight: 600;
-  color: #131a22;
+  font-weight: 700;
+  color: var(--nv-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -392,16 +487,24 @@
 @media (max-width: 820px) {
   .heatmap-page {
     flex-direction: column;
-    height: 100dvh;
+  }
+
+  /* Map first, panel below — risk circles are the point of this page */
+  .heatmap-map-wrapper {
+    order: 1;
   }
 
   .heatmap-sidebar {
+    order: 2;
     width: 100%;
     max-height: 46vh;
     border-right: none;
-    border-bottom: 1px solid var(--hm-line);
-    padding: 18px 16px;
-    gap: 16px;
+    border-top: 1px solid var(--nv-line);
+    border-radius: 26px 26px 0 0;
+    background: var(--nv-surface);
+    box-shadow: 0 -14px 38px rgba(60, 31, 45, 0.12);
+    padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+    gap: 14px;
   }
 
   .sidebar-footer {
@@ -418,7 +521,19 @@
     animation-iteration-count: 1;
   }
 
+  .heatmap-sidebar > *,
+  .error-box,
+  .map-overlay,
+  .map-toast {
+    animation: none;
+  }
+
   .risk-bar-segment {
     transition: none;
+  }
+
+  .district-button:hover,
+  .refresh-button:hover:not(:disabled) {
+    transform: none;
   }
 }
