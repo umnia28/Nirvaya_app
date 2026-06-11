@@ -1235,7 +1235,7 @@ export default function SosPage() {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = "bn-BD";
-    recognition.maxAlternatives = 10;
+    recognition.maxAlternatives = 9;
 
     recognition.onstart = () => {
       setVoiceError("");
@@ -1724,7 +1724,7 @@ export default function SosPage() {
       const triggerMessages = {
         voice: "Voice SOS sent. Your emergency contacts can track your location.",
         auto_stationary:
-          "You were stationary in a danger zone, so SOS was sent automatically.",
+          "AI detected you were stationary in a danger zone, so SOS was sent automatically.",
         button:
           "SOS sent. Your emergency contacts can follow your live location.",
       };
