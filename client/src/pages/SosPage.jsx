@@ -2340,7 +2340,10 @@ export default function SosPage() {
       clearTimeout(toastTimeoutRef.current);
     };
   }, []);
-
+  const getRiskScoreText = () => {  
+    if (currentRisk?.risk_score == null) return "";
+    return `Risk Score: ${currentRisk.risk_score}`;
+  };
   const startVoiceListening = useCallback(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -3019,17 +3022,25 @@ export default function SosPage() {
 
         {/* ── Current risk strip ─────────────────────────────────── */}
         <button
-          className={`risk-strip risk-${riskLevel}`}
-          onClick={fetchCurrentLocationRiskOnce}
-          disabled={initialRiskLoading}
-          aria-live="polite"
-        >
-          <span className="risk-strip-dot" />
-          <span className="risk-strip-text">{getRiskDisplayText()}</span>
-          <span className="risk-strip-action">
-            {initialRiskLoading ? <span className="mini-loader" /> : "Refresh"}
-          </span>
-        </button>
+  className={`risk-strip risk-${riskLevel}`}
+  onClick={fetchCurrentLocationRiskOnce}
+  disabled={initialRiskLoading}
+  aria-live="polite"
+>
+  <span className="risk-strip-dot" />
+
+  <span className="risk-strip-info">
+    <span className="risk-strip-text">{getRiskDisplayText()}</span>
+
+    {!initialRiskLoading && getRiskScoreText() && (
+  <span className="risk-strip-score">{getRiskScoreText()}</span>
+)}
+  </span>
+
+  <span className="risk-strip-action">
+    {initialRiskLoading ? <span className="mini-loader" /> : "Refresh"}
+  </span>
+</button>
 
         <section className="sos-content">
           {/* ── Hero: the SOS button ─────────────────────────────── */}

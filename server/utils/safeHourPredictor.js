@@ -51,6 +51,8 @@ export const predictSafeHours = async ({
     const isSafe =
       p.risk_level === "low" ||
       p.risk_level === "unknown" ||
+      p.risk_level === "medium" ||
+      p.risk_level === "high" && p.risk_score < 75 ||
       p.risk_score < 3;
 
     if (isSafe && windowStart === null) {

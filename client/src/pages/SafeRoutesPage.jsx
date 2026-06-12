@@ -774,9 +774,7 @@ export default function SafeRoutesPage() {
            </div>
  
            <div className="safe-routes-panel-content">
-             <button className="back-button" onClick={() => navigate("/sos")}>
-               <ChevronLeft size={16} strokeWidth={2.4} /> Back
-             </button>
+             
  
              <div className="brand-row">
                <div className="brand-icon">N</div>
