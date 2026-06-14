@@ -463,6 +463,7 @@ import pool from "../config/db.js";
 import { io } from "../index.js";
 import { generateEmergencyMessage } from "../utils/generateEmergencyMessage.js";
 import { generateIncidentReport } from "../utils/generateIncidentReport.js";
+import { sendBulkEmergencySms } from "../utils/sendSms.js";
 
 const cleanEmergencyContacts = (contacts) => {
   if (!Array.isArray(contacts)) return [];
@@ -488,7 +489,21 @@ const buildTrackingLink = (publicToken) => {
 const buildGoogleMapsLink = (latitude, longitude) => {
   return `https://maps.google.com/?q=${latitude},${longitude}`;
 };
-
+const buildEmergencySmsText = ({
+  userName,
+  latitude,
+  longitude,
+  riskLevel,
+  riskScore,
+  trackingLink,
+  triggerType,
+}) => {
+  return `Nirvaya SOS Alert
+${userName || "App User"} triggered SOS via ${triggerType || "button"}.
+Risk: ${riskLevel}${riskScore != null ? ` (${riskScore})` : ""}
+Location: ${latitude}, ${longitude}
+Track live: ${trackingLink}`;
+};
 const calculateRiskLevel = (riskScore) => {
   const score = Number(riskScore ?? 0);
 
@@ -653,15 +668,30 @@ export const startSos = async (req, res) => {
       triggerType: trigger_type,
       timestamp: new Date().toISOString(),
     });
+    const smsMessage = buildEmergencySmsText({
+      userName: user_name || "App User",
+      latitude,
+      longitude,
+      riskLevel,
+      riskScore: risk_score,
+      trackingLink,
+      triggerType: trigger_type,
+    });
 
     console.log("AI Emergency Message:\n", aiMessage);
     console.log("Emergency Contacts:", contacts);
     console.log("Nearest Police:", nearestPoliceStation);
 
-    /*
-      This emits to the public tracking page room.
-      Your tracking page joins this room using publicToken.
-    */
+    let smsResults = [];
+
+    if (contacts.length > 0) {
+      smsResults = await sendBulkEmergencySms({
+        contacts,
+        message: smsMessage,
+      });
+
+      console.log("SMS Results:", smsResults);
+    }
     io.to(publicToken).emit("sos_started", {
       sosId: sos.id,
       publicToken,
@@ -708,11 +738,13 @@ export const startSos = async (req, res) => {
       emergency_contacts: contacts,
       nearest_police_station: nearestPoliceStation,
       ai_message: aiMessage,
+      sms_results: smsResults,
+
     });
   } catch (error) {
     try {
       await client.query("ROLLBACK");
-    } catch {}
+    } catch { }
 
     console.error("Start SOS error:", error);
 
@@ -898,8 +930,10 @@ export const resolveSos = async (req, res) => {
     const sos = result.rows[0];
 
     io.to(sos.public_token).emit("sos_resolved", {
+      sosId: sos.id,
+      publicToken: sos.public_token,
       status: "resolved",
-      resolved_at: sos.resolved_at,
+      resolvedAt: sos.resolved_at,
     });
 
     return res.status(200).json({
@@ -959,8 +993,8 @@ export const getIncidentReport = async (req, res) => {
 
     const durationMinutes = sos.resolved_at
       ? Math.round(
-          (new Date(sos.resolved_at) - new Date(sos.created_at)) / 60000
-        )
+        (new Date(sos.resolved_at) - new Date(sos.created_at)) / 60000
+      )
       : 0;
 
     const riskLevel = calculateRiskLevel(sos.risk_score);

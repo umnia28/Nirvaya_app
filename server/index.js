@@ -3,11 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
+import cookieParser from "cookie-parser";
 
 import sosRoutes from "./routes/sosRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
 import routeRoutes from "./routes/routeRoutes.js";
 import heatmapRoutes from "./routes/heatmapRoutes.js";
+import policeAuthRoutes from "./routes/policeAuthRoutes.js";
 
 import { startLocationCleanupJob } from "./jobs/locationCleanupJob.js";
 
@@ -16,11 +18,14 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:3000",
   process.env.CLIENT_URL,
+  process.env.POLICE_CLIENT_URL,
 ].filter(Boolean);
 
 app.use(
@@ -91,6 +96,7 @@ app.use("/api/sos", sosRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/routes", routeRoutes);
 app.use("/api/heatmap", heatmapRoutes);
+app.use("/api/police", policeAuthRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

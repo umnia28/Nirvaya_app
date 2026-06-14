@@ -8,14 +8,14 @@
 
 :root {
   /* Rose palette */
-  --nv-bg: #fbf4f6;             /* warm blush paper */
+  --nv-bg: #fbf4f6; ;             /* warm blush paper */
   --nv-surface: #ffffff;
   --nv-ink: #3c1f2d;            /* deep rosewood, softer than black */
   --nv-ink-soft: #97707f;
   --nv-line: #f1dde4;
   --nv-primary: #b13a66;        /* raspberry rose — trust & actions */
   --nv-primary-deep: #8d2a50;
-  --nv-sos: #e11d48;            /* living rose-red, SOS only */
+  --nv-sos: #e11d48;            /* living rose-red, SOS only  #fbf4f6; */
   --nv-sos-deep: #9f1239;
   --nv-safe: #2a9d6e;
   --nv-warn: #e08700;
