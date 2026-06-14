@@ -57,6 +57,24 @@ io.on("connection", (socket) => {
     console.log(`Socket ${socket.id} left room ${publicToken}`);
   });
 
+  socket.on("join_police_station", (policeStationId) => {
+    if (!policeStationId) return;
+
+    const roomName = `police_${policeStationId}`;
+    socket.join(roomName);
+
+    console.log(`Socket ${socket.id} joined police room ${roomName}`);
+  });
+
+  socket.on("leave_police_station", (policeStationId) => {
+    if (!policeStationId) return;
+
+    const roomName = `police_${policeStationId}`;
+    socket.leave(roomName);
+
+    console.log(`Socket ${socket.id} left police room ${roomName}`);
+  });
+
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
   });
