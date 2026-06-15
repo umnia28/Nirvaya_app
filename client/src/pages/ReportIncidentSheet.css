@@ -1,0 +1,167 @@
+/* ReportIncidentSheet.css
+   Reuses your existing .urgent-overlay for the dim backdrop.
+   Tweak the colours to match your exact palette if needed. */
+
+.report-sheet {
+  width: 100%;
+  max-width: 360px;
+  background: #16182a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: report-rise 0.18s ease-out;
+}
+
+@keyframes report-rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.report-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.report-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.report-sheet-title svg {
+  color: #ff5a7a;
+}
+
+.report-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd0e0;
+  cursor: pointer;
+}
+
+.report-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.report-sheet-sub {
+  margin: 6px 0 16px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #9aa0b5;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.report-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e7e9f2;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.report-chip:active {
+  transform: scale(0.98);
+}
+
+.report-chip-active {
+  border-color: #ff5a7a;
+  background: rgba(255, 90, 122, 0.14);
+  color: #fff;
+}
+
+.report-chip-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.report-textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.report-textarea::placeholder {
+  color: #7e8499;
+}
+
+.report-textarea:focus {
+  border-color: rgba(255, 90, 122, 0.6);
+}
+
+.report-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.report-cancel,
+.report-submit {
+  flex: 1;
+  padding: 13px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.report-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd0e0;
+}
+
+.report-submit {
+  background: #ff5a7a;
+  color: #fff;
+}
+
+.report-submit:disabled,
+.report-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Icon tint for the "Report an incident" card on the SOS page */
+.card-icon.icon-report {
+  background: rgba(255, 90, 122, 0.14);
+  color: #ff5a7a;
+}

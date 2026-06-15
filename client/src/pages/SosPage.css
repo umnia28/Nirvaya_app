@@ -561,6 +561,7 @@
 .icon-on { background: linear-gradient(150deg, #e3f5ec, #d2eee0); color: var(--nv-safe); }
 .icon-link { background: linear-gradient(150deg, #fde5ec, #fbd5e0); color: var(--nv-sos); }
 .icon-doc { background: linear-gradient(150deg, #f4e8f0, #ecd9e6); color: var(--nv-primary-deep); }
+.icon-report { background: linear-gradient(150deg, #fde8ee, #f9d3e0); color: var(--nv-sos-deep); }
 
 .card-icon svg {
   display: block;
@@ -836,6 +837,174 @@
   background: linear-gradient(140deg, #f43f5e, var(--nv-sos-deep));
   color: #fff;
   box-shadow: 0 8px 18px rgba(225, 29, 72, 0.32);
+}
+
+/* ---------- Report an incident sheet ---------- */
+
+/* Reuses .urgent-sheet for the slide-up; overrides alignment + accent */
+.report-sheet {
+  text-align: left;
+  border-top: 5px solid var(--nv-primary);
+}
+
+.report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.report-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+}
+
+.report-title svg {
+  color: var(--nv-sos);
+  flex-shrink: 0;
+}
+
+.report-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f6ecf1;
+  color: var(--nv-ink-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s var(--ease-soft), transform 0.18s var(--ease-spring);
+}
+
+.report-close:hover {
+  background: #efdfe8;
+}
+
+.report-close:active {
+  transform: scale(0.94);
+}
+
+.report-sub {
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.report-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px;
+  border-radius: 14px;
+  border: 1.5px solid var(--nv-line);
+  background: #fdf8fa;
+  color: var(--nv-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease-soft), background 0.16s var(--ease-soft),
+    box-shadow 0.16s var(--ease-soft), transform 0.14s var(--ease-spring);
+}
+
+.report-chip:active {
+  transform: scale(0.97);
+}
+
+.report-chip-active {
+  border-color: var(--nv-primary);
+  background: linear-gradient(150deg, #fdeef3, #f9e1ea);
+  color: var(--nv-primary-deep);
+  box-shadow: 0 4px 12px rgba(177, 58, 102, 0.16);
+}
+
+.report-chip-emoji {
+  font-size: 1.05rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.report-textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--nv-line);
+  background: #fdf8fa;
+  color: var(--nv-ink);
+  font-size: 0.85rem;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s var(--ease-soft);
+}
+
+.report-textarea::placeholder {
+  color: var(--nv-ink-soft);
+}
+
+.report-textarea:focus {
+  border-color: var(--nv-primary);
+}
+
+.report-cancel,
+.report-submit {
+  flex: 1;
+  margin-top: 16px;
+  padding: 15px;
+  border-radius: 16px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.16s var(--ease-spring), filter 0.16s var(--ease-soft);
+}
+
+.report-cancel {
+  background: #f6ecf1;
+  color: var(--nv-ink-soft);
+}
+
+.report-submit {
+  background: linear-gradient(140deg, #c64a76, var(--nv-primary-deep));
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(177, 58, 102, 0.32);
+}
+
+.report-cancel:active,
+.report-submit:active {
+  transform: scale(0.96);
+}
+
+.report-submit:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.report-cancel:disabled,
+.report-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* The report sheet places its actions in the shared .urgent-actions row,
+   but the buttons carry their own top margin, so neutralise the row gap top */
+.report-sheet .urgent-actions {
+  margin-top: 0;
 }
 
 /* ---------- Toast ---------- */
