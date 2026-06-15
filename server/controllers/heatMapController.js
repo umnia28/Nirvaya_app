@@ -36,7 +36,7 @@ const getBangladeshTimeInfo = () => {
 const normalizeHeatmapWeight = (riskScore) => {
   const score = Number(riskScore || 0);
 
-  // Your model returns risk_score from 0 to 100
+
   return Math.max(0, Math.min(score / 100, 1));
 };
 
