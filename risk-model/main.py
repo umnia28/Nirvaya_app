@@ -89,7 +89,7 @@ def predict_risk(data: RiskRequest):
 
     high_probability = probabilities.get("high", 0)
 
-    if prediction == "high" and high_probability >= 75:
+    if prediction == "high" and high_probability >= 85:
         final_level = "critical"
     else:
         final_level = str(prediction)
@@ -168,7 +168,7 @@ def predict_risk_batch(request: BatchRiskRequest):
 
         high_probability = probabilities.get("high", 0)
 
-        if raw_prediction == "high" and high_probability >= 75:
+        if raw_prediction == "high" and high_probability >= 85:
             final_level = "critical"
         else:
             final_level = raw_prediction
