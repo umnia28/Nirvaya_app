@@ -6,6 +6,13 @@ const ORS_BASE_URL = "https://api.openrouteservice.org";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const isInsideBangladesh = (latitude, longitude) => {
+  const lat = Number(latitude);
+  const lon = Number(longitude);
+
+  return lat >= 20.5 && lat <= 26.8 && lon >= 88.0 && lon <= 92.8;
+};
+
 const geocodeZone = async ({ district, zoneName }) => {
   const searchText = `${zoneName}, ${district}, Bangladesh`;
 
@@ -33,16 +40,25 @@ const geocodeZone = async ({ district, zoneName }) => {
 
   const feature = data?.features?.[0];
 
-  if (!feature) {
+  if (!feature?.geometry?.coordinates) {
     return null;
   }
 
   const [longitude, latitude] = feature.geometry.coordinates;
 
+  if (!isInsideBangladesh(latitude, longitude)) {
+    throw new Error(
+      `Result outside Bangladesh: ${latitude}, ${longitude}, label: ${
+        feature.properties?.label || "unknown"
+      }`
+    );
+  }
+
   return {
-    latitude,
-    longitude,
+    latitude: Number(latitude),
+    longitude: Number(longitude),
     label: feature.properties?.label || searchText,
+    confidence: feature.properties?.confidence ?? null,
   };
 };
 
@@ -61,24 +77,33 @@ const geocodeMissingZones = async () => {
       FROM zones
       WHERE latitude IS NULL
          OR longitude IS NULL
-         OR geocoded = FALSE
       ORDER BY district ASC, zone_name ASC
       `
     );
 
     const zones = result.rows;
 
-    console.log(`Found ${zones.length} zones to geocode`);
+    console.log(`Found ${zones.length} zones with missing coordinates`);
+
+    let updatedCount = 0;
+    let notFoundCount = 0;
+    let failedCount = 0;
 
     for (const zone of zones) {
+      const queryName = `${zone.zone_name}, ${zone.district}`;
+
       try {
+        console.log(`\nGeocoding: ${queryName}`);
+
         const geo = await geocodeZone({
           district: zone.district,
           zoneName: zone.zone_name,
         });
 
         if (!geo) {
-          console.log(`Not found: ${zone.zone_name}, ${zone.district}`);
+          notFoundCount++;
+          console.log(`Not found: ${queryName}`);
+          await sleep(1200);
           continue;
         }
 
@@ -96,21 +121,29 @@ const geocodeMissingZones = async () => {
           [geo.latitude, geo.longitude, zone.id]
         );
 
+        updatedCount++;
+
         console.log(
-          `Updated: ${zone.zone_name}, ${zone.district} -> ${geo.latitude}, ${geo.longitude}`
+          `Updated: ${queryName} -> ${geo.latitude}, ${geo.longitude}`
         );
+        console.log(`ORS label: ${geo.label}`);
+        console.log(`Confidence: ${geo.confidence}`);
 
         // Avoid hitting ORS too fast
-        await sleep(500);
+        await sleep(1200);
       } catch (error) {
-        console.error(
-          `Failed: ${zone.zone_name}, ${zone.district}`,
-          error.message
-        );
+        failedCount++;
+        console.error(`Failed: ${queryName}`);
+        console.error(error.message);
+
+        await sleep(1200);
       }
     }
 
-    console.log("Geocoding completed");
+    console.log("\nGeocoding completed");
+    console.log("Updated:", updatedCount);
+    console.log("Not found:", notFoundCount);
+    console.log("Failed:", failedCount);
   } catch (error) {
     console.error("Geocoding script failed:", error);
   } finally {

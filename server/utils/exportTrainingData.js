@@ -1,6 +1,5 @@
 // server/utils/exportTrainingData.js
 
-/*When you want to use incident reports to improve your risk model, run this query to export training data:*/
 import pool from "../config/db.js";
 import fs from "fs";
 

@@ -43,8 +43,6 @@ def get_bd_time_features():
 def get_risk_score_from_probabilities(risk_level, probabilities):
     high_probability = probabilities.get("high", 0)
 
-    # Keep same style as your single prediction endpoint:
-    # risk_score = high class probability
     if high_probability is not None:
         return round(float(high_probability), 2)
 
