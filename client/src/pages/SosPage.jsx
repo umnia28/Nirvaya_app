@@ -131,6 +131,12 @@ export default function SosPage() {
   const [reportDescription, setReportDescription] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
 
+  const [reportCoords, setReportCoords] = useState(null);
+  const [reportLocationLoading, setReportLocationLoading] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
+  const [showManualLocation, setShowManualLocation] = useState(false);
+
   const [toast, setToast] = useState(null); // { message, type: "info" | "success" | "danger" }
 
   const showToast = useCallback((message, type = "info") => {
@@ -269,7 +275,7 @@ export default function SosPage() {
         restartTimeoutRef.current = setTimeout(() => {
           try {
             recognitionRef.current?.start();
-          } catch (_) {}
+          } catch (_) { }
         }, 300);
       }
     };
@@ -293,7 +299,7 @@ export default function SosPage() {
       recognitionRef.current.onerror = null;
       try {
         recognitionRef.current.stop();
-      } catch (_) {}
+      } catch (_) { }
       recognitionRef.current = null;
     }
   }, []);
@@ -471,12 +477,42 @@ export default function SosPage() {
   };
 
   // ── Community incident report ─────────────────────────────────
-  const openReport = () => setReportOpen(true);
+  const openReport = async () => {
+    setReportOpen(true);
+    setShowManualLocation(false);
+    setManualLat("");
+    setManualLng("");
+
+    // Default: use user's current/latest location
+    if (currentCoords) {
+      setReportCoords(currentCoords);
+    }
+
+    try {
+      setReportLocationLoading(true);
+      const location = await getCurrentLocation();
+      setCurrentCoords(location);
+      setReportCoords(location);
+    } catch (error) {
+      console.log("Report location error:", error.message);
+      showToast(
+        "Couldn't get current location. You can choose location manually.",
+        "info"
+      );
+      setShowManualLocation(true);
+    } finally {
+      setReportLocationLoading(false);
+    }
+  };
 
   const resetReport = () => {
     setReportOpen(false);
     setReportCategory(null);
     setReportDescription("");
+    setReportCoords(null);
+    setManualLat("");
+    setManualLng("");
+    setShowManualLocation(false);
   };
 
   const closeReport = () => {
@@ -484,25 +520,72 @@ export default function SosPage() {
     resetReport();
   };
 
+  const useCurrentLocationForReport = async () => {
+    try {
+      setReportLocationLoading(true);
+      const location = await getCurrentLocation();
+      setCurrentCoords(location);
+      setReportCoords(location);
+      setManualLat("");
+      setManualLng("");
+      setShowManualLocation(false);
+      showToast("Using your current location for this report.", "success");
+    } catch (error) {
+      showToast(error.message || "Couldn't get current location.", "danger");
+    } finally {
+      setReportLocationLoading(false);
+    }
+  };
+
+  const applyManualReportLocation = () => {
+    const lat = Number(manualLat);
+    const lng = Number(manualLng);
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      showToast("Enter a valid latitude.", "info");
+      return;
+    }
+
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+      showToast("Enter a valid longitude.", "info");
+      return;
+    }
+
+    const selectedLocation = {
+      latitude: lat,
+      longitude: lng,
+    };
+
+    setReportCoords(selectedLocation);
+    showToast("Report location updated.", "success");
+  };
+
   const submitUserReport = async () => {
     if (!reportCategory) {
       showToast("Please pick what happened.", "info");
       return;
     }
+
     try {
       setReportSubmitting(true);
 
-      // Prefer a fresh fix; fall back to the last known coordinates.
-      let coords = currentCoords;
-      try {
-        coords = await getCurrentLocation();
-        setCurrentCoords(coords);
-      } catch {
-        
+      let coords = reportCoords;
+
+      // Default fallback: if modal somehow has no reportCoords, use current location.
+      if (!coords) {
+        try {
+          coords = await getCurrentLocation();
+          setCurrentCoords(coords);
+          setReportCoords(coords);
+        } catch {
+          throw new Error(
+            "Couldn't get report location. Please choose location manually."
+          );
+        }
       }
-      if (!coords) throw new Error("Couldn't get your location. Try again.");
 
       const deviceId = getOrCreateDeviceId();
+
       const response = await fetch(`${API_URL}/reports`, {
         method: "POST",
         headers: {
@@ -519,13 +602,16 @@ export default function SosPage() {
       });
 
       const data = await response.json();
-      if (!response.ok || !data.success)
+
+      if (!response.ok || !data.success) {
         throw new Error(data.message || "Failed to submit report.");
+      }
 
       showToast(
         "Report submitted. Thank you for keeping others safe.",
         "success"
       );
+
       resetReport();
     } catch (error) {
       showToast(error.message, "danger");
@@ -561,8 +647,8 @@ export default function SosPage() {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos(toRad(pointA.latitude)) *
-        Math.cos(toRad(pointB.latitude)) *
-        Math.sin(dLon / 2) ** 2;
+      Math.cos(toRad(pointB.latitude)) *
+      Math.sin(dLon / 2) ** 2;
     return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
@@ -585,7 +671,7 @@ export default function SosPage() {
   const playSosAlarm = () => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => {});
+    audioRef.current.play().catch(() => { });
   };
 
   const stopSosAlarm = () => {
@@ -901,7 +987,7 @@ export default function SosPage() {
       </audio>
 
       <section className="phone-frame">
-        
+
         <header className="sos-header">
           <div>
             <p className="welcome">Welcome back,</p>
@@ -917,7 +1003,7 @@ export default function SosPage() {
           </button>
         </header>
 
-        
+
         <button
           className={`risk-strip risk-${riskLevel}`}
           onClick={fetchCurrentLocationRiskOnce}
@@ -940,7 +1026,7 @@ export default function SosPage() {
         </button>
 
         <section className="sos-content">
-          
+
           <div className="sos-hero">
             <h2 className="title">
               {activeSos ? "SOS is active" : "Are you in danger?"}
@@ -993,7 +1079,7 @@ export default function SosPage() {
             )}
           </div>
 
-          
+
           {trackingLink && (
             <div className="card card-tracking">
               <div className="card-icon icon-link" aria-hidden="true">
@@ -1013,7 +1099,7 @@ export default function SosPage() {
             </div>
           )}
 
-         
+
           {reportLoading && (
             <div className="card">
               <span className="mini-loader" />
@@ -1043,7 +1129,7 @@ export default function SosPage() {
             </div>
           )}
 
-          
+
           <h3 className="section-heading">Protection tools</h3>
 
           <div className="card">
@@ -1089,10 +1175,10 @@ export default function SosPage() {
                 {!voiceReady && !voiceError
                   ? "Checking browser support…"
                   : voiceEnabled
-                  ? lastTranscript
-                    ? `Heard: "${lastTranscript}"`
-                    : "Listening for the keyword…"
-                  : "Say \u201cসাহায্য করো\u201d to send SOS hands-free"}
+                    ? lastTranscript
+                      ? `Heard: "${lastTranscript}"`
+                      : "Listening for the keyword…"
+                    : "Say \u201cসাহায্য করো\u201d to send SOS hands-free"}
               </p>
               {voiceError && <p className="card-error">{voiceError}</p>}
             </div>
@@ -1106,7 +1192,7 @@ export default function SosPage() {
             </button>
           </div>
 
-          
+
           <h3 className="section-heading">Community safety</h3>
 
           <button className="route-tab" onClick={openReport}>
@@ -1125,7 +1211,7 @@ export default function SosPage() {
             </span>
           </button>
 
-          
+
           <h3 className="section-heading">Plan ahead</h3>
 
           <div className="card">
@@ -1138,7 +1224,7 @@ export default function SosPage() {
                 {safeHoursLoading
                   ? "Analyzing the next 12 hours…"
                   : safeHours?.recommendation ||
-                    "Check the safest hours for your area"}
+                  "Check the safest hours for your area"}
               </p>
             </div>
             {safeHoursLoading ? (
@@ -1182,7 +1268,7 @@ export default function SosPage() {
         </section>
       </section>
 
-      
+
       {safetyPromptVisible && (
         <div className="urgent-overlay" role="alertdialog" aria-live="assertive">
           <div className="urgent-sheet urgent-warning">
@@ -1229,7 +1315,7 @@ export default function SosPage() {
         </div>
       )}
 
-      
+
       {reportOpen && (
         <div className="urgent-overlay" role="dialog" aria-modal="true">
           <div className="urgent-sheet report-sheet">
@@ -1250,6 +1336,80 @@ export default function SosPage() {
             <p className="urgent-text report-sub">
               Your report is anonymous and helps warn other women nearby.
             </p>
+            <div className="report-location-box">
+              <div className="report-location-main">
+                <MapPin size={17} strokeWidth={2.2} />
+                <div>
+                  <p className="report-location-title">
+                    {reportLocationLoading
+                      ? "Getting your current location…"
+                      : reportCoords
+                        ? "Using report location"
+                        : "No report location selected"}
+                  </p>
+
+                  {reportCoords && (
+                    <p className="report-location-coords">
+                      {reportCoords.latitude.toFixed(5)},{" "}
+                      {reportCoords.longitude.toFixed(5)}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="report-location-actions">
+                <button
+                  type="button"
+                  className="report-location-btn"
+                  onClick={useCurrentLocationForReport}
+                  disabled={reportLocationLoading || reportSubmitting}
+                >
+                  Current
+                </button>
+
+                <button
+                  type="button"
+                  className="report-location-btn"
+                  onClick={() => setShowManualLocation((prev) => !prev)}
+                  disabled={reportSubmitting}
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+
+            {showManualLocation && (
+              <div className="manual-location-box">
+                <div className="manual-location-row">
+                  <input
+                    className="manual-location-input"
+                    type="number"
+                    step="any"
+                    placeholder="Latitude"
+                    value={manualLat}
+                    onChange={(e) => setManualLat(e.target.value)}
+                  />
+
+                  <input
+                    className="manual-location-input"
+                    type="number"
+                    step="any"
+                    placeholder="Longitude"
+                    value={manualLng}
+                    onChange={(e) => setManualLng(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  className="manual-location-apply"
+                  onClick={applyManualReportLocation}
+                  disabled={reportSubmitting}
+                >
+                  Use this location
+                </button>
+              </div>
+            )}
 
             <div className="report-grid">
               {REPORT_CATEGORIES.map((c) => (
@@ -1299,7 +1459,7 @@ export default function SosPage() {
         </div>
       )}
 
-     
+
       {toast && (
         <div className={`toast toast-${toast.type}`} role="status">
           {toast.message}
@@ -1308,6 +1468,6 @@ export default function SosPage() {
     </main>
   );
 }
-  
+
 
 

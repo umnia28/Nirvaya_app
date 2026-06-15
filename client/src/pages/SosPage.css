@@ -1071,3 +1071,116 @@ button:focus-visible {
     transform: none;
   }
 }
+.report-location-box {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding: 13px 14px;
+  border: 1px solid rgba(151, 80, 112, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 247, 251, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-location-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6e2b4f;
+  min-width: 0;
+}
+
+.report-location-title {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #4b2437;
+}
+
+.report-location-coords {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: #9b6c7e;
+}
+
+.report-location-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.report-location-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: #f1e4eb;
+  color: #7b3a59;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.report-location-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.manual-location-box {
+  margin-top: -6px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff8fb;
+  border: 1px solid rgba(151, 80, 112, 0.16);
+}
+
+.manual-location-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.manual-location-input {
+  width: 100%;
+  border: 1px solid rgba(151, 80, 112, 0.22);
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 0.9rem;
+  color: #4b2437;
+  background: #fff;
+  outline: none;
+}
+
+.manual-location-input:focus {
+  border-color: #b02f69;
+  box-shadow: 0 0 0 3px rgba(176, 47, 105, 0.12);
+}
+
+.manual-location-apply {
+  width: 100%;
+  margin-top: 10px;
+  border: none;
+  border-radius: 13px;
+  padding: 11px 14px;
+  background: #b02f69;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .report-location-box {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-location-actions {
+    width: 100%;
+  }
+
+  .report-location-btn {
+    flex: 1;
+  }
+}

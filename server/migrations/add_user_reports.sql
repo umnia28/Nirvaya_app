@@ -1,10 +1,3 @@
-- ============================================================
---  Community safety reports (user-submitted, anonymous)
---
---  Run:
---    psql "your_connection_string" -f server/migrations/add_user_reports.sql
---  Then restart the backend.
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS user_reports (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,7 +30,4 @@ CREATE INDEX IF NOT EXISTS idx_user_reports_district_category
 CREATE INDEX IF NOT EXISTS idx_user_reports_created_at
   ON user_reports (created_at DESC);
 
--- ------------------------------------------------------------
---  Quick test after wiring the route + frontend:
---    SELECT * FROM user_reports ORDER BY created_at DESC LIMIT 10;
--- ------------------------------------------------------------
+
