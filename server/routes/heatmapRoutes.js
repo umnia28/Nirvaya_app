@@ -1,5 +1,5 @@
 import express from "express";
-import { getLiveRiskHeatmap } from "../controllers/heatmapController.js";
+import { getLiveRiskHeatmap } from "../controllers/heatMapController.js";
 
 const router = express.Router();
 
