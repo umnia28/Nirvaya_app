@@ -2442,7 +2442,7 @@ export default function SosPage() {
             <p className="subtitle">
               {activeSos
                 ? "Your live location is shared with your emergency contacts every 30 seconds."
-                : "Press and hold calm — one tap alerts your emergency contacts with your live location."}
+                : "Press and hold — one tap alerts your emergency contacts with your live location."}
             </p>
 
             <div className={`sos-area ring-${riskLevel}`}>
