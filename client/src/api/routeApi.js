@@ -1,3 +1,4 @@
+import axios from "axios";
 import axiosClient from "./axiosClient";
 
 // export const getSafeAlternativeRoutesApi = async ({
@@ -26,7 +27,7 @@ export const getSafeAlternativeRoutesApi = async ({
   destinationLongitude,
   district,
 }) => {
-  const response = await api.post("/routes/safe-alternatives", {
+  const response = await axiosClient.post("/routes/safe-alternatives", {
     start_latitude: startLatitude,
     start_longitude: startLongitude,
 
