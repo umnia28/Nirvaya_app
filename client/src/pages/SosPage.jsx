@@ -1170,7 +1170,7 @@ export default function SosPage() {
               <button
                 className="small-button"
                 onClick={fetchSafeHours}
-                disabled={!currentCoords}
+                disabled={false}
               >
                 {safeHours ? "Refresh" : "Check"}
               </button>
