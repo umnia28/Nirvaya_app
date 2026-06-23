@@ -69,10 +69,10 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 
 <table>
 <tr>
-<td align="center" width="33%"><b>Live SOS & Risk(Before Trigger)</b><br><br><img src="client/docs/screenshots/SOS1.png" alt="SOS screen" width="240"></td>
-<td align="center" width="33%"><b>Live SOS & Risk(After Trigger)</b><br><br><img src="client/docs/screenshots/SOS2.png" alt="SOS screen" width="240"></td>
-<td align="center" width="33%"><b>Safe Route Planner</b><br><br><img src="client/docs/screenshots/SafeRoutes.png" alt="Safe routes" width="240"></td>
-<td align="center" width="33%"><b>National Heatmap</b><br><br><img src="client/docs/screenshots/Safetyheatmap.png" alt="Heatmap" width="240"></td>
+<td align="center" width="33%"><b>Live SOS & Risk(Before Trigger)</b><br><br><img src="client/docs/screenshots/SOS1.png" alt="SOS screen" width="150"></td>
+<td align="center" width="33%"><b>Live SOS & Risk(After Trigger)</b><br><br><img src="client/docs/screenshots/SOS2.png" alt="SOS screen" width="150"></td>
+<td align="center" width="33%"><b>Safe Route Planner</b><br><br><img src="client/docs/screenshots/SafeRoutes.png" alt="Safe routes" width="150"></td>
+<td align="center" width="33%"><b>National Heatmap</b><br><br><img src="client/docs/screenshots/Safetyheatmap.png" alt="Heatmap" width="150"></td>
 </tr>
 </table>
 
