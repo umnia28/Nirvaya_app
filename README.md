@@ -2,18 +2,21 @@
 
 # Nirvaya
 
-### Bangladesh's first *predictive* personal safety intelligence platform
+### AI-Powered Predictive Safety Platform for Bangladesh
 
-**Crime intelligence · Environmental risk analysis · Real-time emergency response**
-
-*Avoiding risk before an incident can scar a life forever.*
+**Predict Risk · Prevent Incidents · Protect Lives**
 
 <br>
 
-![Stack](https://img.shields.io/badge/stack-PERN-b13a66?style=for-the-badge)
-![AI](https://img.shields.io/badge/AI-risk_prediction-e11d48?style=for-the-badge)
-![Coverage](https://img.shields.io/badge/coverage-682_zones-2a9d6e?style=for-the-badge)
-![Status](https://img.shields.io/badge/status-prototype-e08700?style=for-the-badge)
+> ### Nirvaya doesn't just help people survive emergencies — it helps them avoid them altogether.
+
+<br>
+
+![Stack](https://img.shields.io/badge/Stack-PERN-b13a66?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-Risk_Prediction-e11d48?style=for-the-badge)
+![Zones](https://img.shields.io/badge/682-Zones_Covered-2a9d6e?style=for-the-badge)
+![SOS](https://img.shields.io/badge/Real--Time-SOS-9f1239?style=for-the-badge)
+![Police](https://img.shields.io/badge/Police-Integration-8d2a50?style=for-the-badge)
 
 </div>
 
@@ -21,31 +24,105 @@
 
 <div align="center">
 
+[Overview](#overview) ·
+[Demo](#demo) ·
+[Architecture](#system-architecture) ·
 [The Problem](#the-problem) ·
-[What It Does](#what-nirvaya-does) ·
+[Why It's Different](#why-nirvaya-is-different) ·
+[Why AI?](#why-ai) ·
 [Features](#key-features) ·
-[Innovations](#what-makes-it-different) ·
 [How It Works](#how-it-works) ·
 [Tech Stack](#tech-stack) ·
-[Getting Started](#getting-started) ·
-[Results](#results)
+[Getting Started](#getting-started)
 
 </div>
 
 ---
 
+## Overview
+
+Nirvaya transforms **crime intelligence, environmental risk factors, and real-time community reports** into actionable safety guidance for citizens.
+
+Unlike traditional safety applications that respond *after* an emergency begins, Nirvaya works proactively — identifying danger before a user enters it, recommending safer routes and travel times, and automatically escalating emergencies when the user is unable to act.
+
+From route planning to emergency response, Nirvaya creates a continuously evolving **national safety intelligence layer** designed to make everyday movement safer.
+
+> **The safest journey is the one where the emergency never happens.**
+
+---
+
+## Demo
+
+> Replace the placeholders below with real screenshots / GIFs from your build — judges weight a working visual heavily. Drop files into `docs/screenshots/` and update the paths.
+
+<div align="center">
+
+<table>
+<tr>
+<td align="center" width="33%"><b>Live SOS & Risk</b><br><br><img src="docs/screenshots/sos.png" alt="SOS screen" width="240"></td>
+<td align="center" width="33%"><b>Safe Route Planner</b><br><br><img src="docs/screenshots/routes.png" alt="Safe routes" width="240"></td>
+<td align="center" width="33%"><b>National Heatmap</b><br><br><img src="docs/screenshots/heatmap.png" alt="Heatmap" width="240"></td>
+</tr>
+</table>
+
+*Live demo:* `https://your-demo-link.example`
+
+</div>
+
+---
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client["React App (Vite)"]
+        UI["SOS · Safe Routes · Heatmap · Reports"]:::client
+    end
+
+    subgraph Server["Node.js + Express API"]
+        SVC["Risk · SOS · Location · Reports services"]:::api
+    end
+
+    subgraph Intelligence["Python Risk Model"]
+        MODEL["Trained classifier<br/>low / medium / high / critical"]:::ml
+    end
+
+    DB[("PostgreSQL")]:::db
+    OSM["OpenStreetMap"]:::ext
+    SMS["SMS Gateway"]:::ext
+    POLICE["Police Dashboard"]:::ext
+
+    UI -->|x-device-id| SVC
+    SVC --> DB
+    SVC -->|risk score request| MODEL
+    MODEL --> DB
+    OSM -->|environmental features| Intelligence
+    SVC -->|live location| SMS
+    SVC -->|alerts| POLICE
+
+    classDef client fill:#fdeef3,stroke:#b13a66,color:#8d2a50,font-weight:bold;
+    classDef api fill:#ffffff,stroke:#b13a66,color:#3c1f2d,font-weight:bold;
+    classDef ml fill:#b13a66,stroke:#8d2a50,color:#ffffff,font-weight:bold;
+    classDef db fill:#fff4e0,stroke:#e08700,color:#7a4a00,font-weight:bold;
+    classDef ext fill:#f4f0f2,stroke:#97707f,color:#3c1f2d;
+```
+
+A **no-login**, anonymous architecture: each device is tracked through a generated device ID (`x-device-id`), so safety never requires surrendering identity.
+
+---
+
 ## The Problem
 
-Bangladesh lacks a unified system that turns crime intelligence into **actionable safety guidance** for citizens. Existing safety apps only react *after* an emergency has already begun — exactly when a victim is least able to call for help, describe their location, or reach the police.
+Bangladesh lacks a unified system that turns crime intelligence into **actionable safety guidance** for citizens. Existing safety apps only react *after* an emergency has begun — exactly when a victim is least able to call for help, describe their location, or reach the police.
 
-The scale of the problem is severe. According to documented human-rights monitoring data from **ASK (Ain o Salish Kendra)**:
+The scale is severe. According to documented human-rights monitoring data from **ASK (Ain o Salish Kendra)**:
 
-- **776 rape cases** were recorded over the 13 months up to February 2026 — nearly **two reported cases every day**, with almost half the victims being minors.
-- **306 girls and 30 boys** were reported raped in the first seven months of 2025 alone — about **1.6 reported child-rape cases per day**.
+- **776 rape cases** recorded over the 13 months up to February 2026 — nearly **two reported cases every day**, with almost half the victims being minors.
+- **306 girls and 30 boys** reported raped in the first seven months of 2025 alone — about **1.6 reported child-rape cases per day**.
 
-These figures only reflect *reported* cases. Social repression, criticism, and fear of judgement mean the real scale is almost certainly higher.
+These reflect only *reported* cases. Social repression, criticism, and fear of judgement mean the real scale is almost certainly higher.
 
-Traditional safety methods all share the same fatal flaw — **they depend on the victim acting during the emergency**:
+Traditional safety methods share the same fatal flaw — **they depend on the victim acting during the emergency**:
 
 | # | Weakness of existing approaches |
 |:--:|---------------------------------|
@@ -57,20 +134,75 @@ Traditional safety methods all share the same fatal flaw — **they depend on th
 | 6 | Users are unaware when they're entering a high-risk zone |
 | 7 | Crime reports are scattered and never converted into usable intelligence |
 
-> **There is a clear need for a digital safety system that provides both preventive guidance *and* emergency response — not one or the other.**
+### From Reactive Safety to Predictive Safety
+
+Current safety systems operate on a single assumption:
+
+```text
+Traditional:   Something bad happens  →  User triggers SOS  →  Help arrives
+Nirvaya:       Risk Detection  →  Prevention  →  Early Warning  →  Automated Response
+```
+
+But during a real emergency, victims may be unable to reach their phone, communicate their location, or call for help. By continuously evaluating **location risk, travel conditions, time-based patterns, environmental factors, and community intelligence**, Nirvaya helps users avoid dangerous situations before they become emergencies.
+
+And when prevention fails, Nirvaya automatically activates a **multi-layer emergency response** — voice-triggered SOS, live location sharing, stationary-risk detection, and police dashboard integration.
 
 ---
 
-## What Nirvaya Does
+## Why Nirvaya Is Different
 
-Nirvaya is a predictive safety platform built around a single idea: **stop the incident before it happens, and respond instantly if it does.**
+<table>
+<tr>
+<td width="50%" valign="top">
 
-It continuously evaluates the risk level of locations across Bangladesh, recommends safer routes and travel times, warns users before they enter dangerous zones, and automatically escalates to an emergency when a user becomes unresponsive — transforming fragmented crime reports and environmental data into a living **national safety intelligence layer**.
+#### Predictive intelligence, not emergency reaction
+Most safety platforms begin working *after* an incident occurs. Nirvaya begins working *before* it happens.
 
-```text
-Traditional apps:   Incident  ──►  SOS  ──►  Help
-Nirvaya:            Risk Detection  ──►  Prevention  ──►  SOS  (only if necessary)
-```
+</td>
+<td width="50%" valign="top">
+
+#### Safety-aware navigation
+Traditional navigation optimises for speed and distance. Nirvaya introduces a new optimisation objective: **personal safety**.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+#### Autonomous emergency response
+Voice-triggered SOS, inactivity detection, and automated escalation ensure assistance can be requested even when users **cannot interact with their devices**.
+
+</td>
+<td width="50%" valign="top">
+
+#### National safety intelligence layer
+Crime reports, environmental conditions, temporal patterns, community intelligence, and user reports combine into a unified risk network covering **682 zones** across Bangladesh.
+
+</td>
+</tr>
+<tr>
+<td colspan="2" valign="top">
+
+#### Self-improving risk model
+Every validated community report strengthens the platform, enabling the system to become **more accurate as adoption grows**.
+
+</td>
+</tr>
+</table>
+
+---
+
+## Why AI?
+
+A fair question for any "AI" project: *does this actually need machine learning, or would a few `if` statements do?* For Nirvaya, the answer is structural.
+
+- **Risk is multi-factor and non-linear.** A zone's danger depends on incident counts, incident *types*, child/minor involvement, environmental conditions, the hour of day, and the day of week — all interacting. Hand-tuned thresholds can't capture how these combine, but a trained model learns the weighting from data.
+- **It can't be hand-authored at scale.** Nirvaya covers **682 zones**, each expanded across time-of-day and day-of-week. That's tens of thousands of risk states — far beyond what static rules can maintain or keep consistent.
+- **Crime data is sparse and under-reported.** A model generalises across similar zones and conditions to estimate risk even where direct reports are thin — something a lookup table simply can't do.
+- **Risk shifts with time and context.** The same street can be safe at noon and dangerous at midnight. The model treats time as a first-class feature, so predictions adapt rather than staying fixed.
+- **It improves with use.** Each validated community report becomes new training signal, so accuracy compounds as adoption grows — a feedback loop rules don't have.
+
+In short, AI isn't decoration here — it's what turns fragmented, incomplete crime data into a coherent, continuously improving risk map.
 
 ---
 
@@ -78,7 +210,7 @@ Nirvaya:            Risk Detection  ──►  Prevention  ──►  SOS  (only
 
 | Feature | What it does |
 |---------|--------------|
-| **Emergency SOS** | Shares the victim's **live location** with emergency contacts (via SMS — works even if they have no app installed) and the nearest police station via dashboard. |
+| **Emergency SOS** | Shares the victim's **live location** with emergency contacts (via SMS — works even with no app installed) and the nearest police station via dashboard. |
 | **AI Safe Routing** | Recommends the *safest* path for a journey — not the shortest — using the risk model. |
 | **Voice-Triggered SOS** | Activates hands-free when the user shouts the Bengali phrase **"সাহায্য করো" (Sahajyo koro)**, even with the phone in a bag or pocket. |
 | **Live Risk Prediction** | While tracking is on, warns the user the moment they enter a high-risk zone. |
@@ -86,41 +218,6 @@ Nirvaya:            Risk Detection  ──►  Prevention  ──►  SOS  (only
 | **Stationary-Risk Detection** | Detects when a user is motionless in a danger zone and auto-escalates if they don't respond. |
 | **Community Incident Reports** | Anonymous, location-tagged reports (stalking, snatching, poor lighting, …) that continuously enrich the dataset. |
 | **National Risk Heatmap** | Visualises the risk of **682 zones** across Bangladesh for better travel decisions. |
-
----
-
-## What Makes It Different
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-#### 1 · Predictive, not reactive
-Most apps wait for an incident. Nirvaya works to prevent it from happening in the first place.
-
-</td>
-<td width="50%" valign="top">
-
-#### 2 · AI-powered safe routing
-Navigation systems optimise for distance or traffic. Nirvaya optimises for **personal safety** — turning *transportation intelligence* into *safety intelligence*.
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-#### 3 · Autonomous emergency detection
-Voice-triggered SOS, stationary-risk detection, and automated escalation mean help can arrive even when the victim **cannot touch their device**.
-
-</td>
-<td width="50%" valign="top">
-
-#### 4 · National risk intelligence layer
-Crime data, environmental conditions, community reports, and temporal factors fuse into a single, continuously evolving national risk map.
-
-</td>
-</tr>
-</table>
 
 ---
 
@@ -194,7 +291,6 @@ If the user stays still for more than **10 minutes** in a high/critical zone, a 
 | **Notifications** | SMS to emergency contacts · police dashboard integration |
 
 > **PERN** = **P**ostgreSQL · **E**xpress · **R**eact · **N**ode.
-> Nirvaya is fully **anonymous** — there is no user login. Each device is tracked through a generated device ID, so safety never requires surrendering identity.
 
 ---
 
@@ -290,20 +386,27 @@ Nirvaya demonstrates an end-to-end predictive safety system:
 
 ---
 
-## Contribution to National Security
+## Potential National Impact
 
 - **Citizen-level threat prevention** — predicts and warns users before they enter dangerous zones.
 - **Community intelligence collection** — verified public reports continuously improve situational awareness.
 - **Faster emergency response** — real-time SOS sharing reduces response latency.
-- **Data-driven crime prevention** — aggregated risk intelligence helps law enforcement identify crime hotspots, recurring patterns, and vulnerable regions, and allocate resources more effectively.
+- **Data-driven crime prevention** — aggregated risk intelligence helps authorities identify crime hotspots, recurring patterns, and vulnerable regions, and allocate resources more effectively.
+- **A safer public for everyone** — as adoption grows, the national risk map sharpens, compounding the safety benefit for every user.
 
 ---
 
-## Limitations & Future Work
+## Roadmap
 
-For this demonstration, Nirvaya was built as a **web application** rather than a native mobile app (mobile permissions introduced complications). As a result, continuous background tracking and always-on voice detection are limited by what browsers allow.
+For this demonstration, Nirvaya was built as a **web application** rather than a native mobile app (mobile permissions introduced complications), which limits continuous background tracking and always-on voice detection to what browsers allow.
 
-**The fix is clear:** a native mobile build. Mobile operating systems are far more generous with background activity, which would unlock fully continuous tracking and voice detection — the natural next step for Nirvaya.
+**Next steps:**
+
+- **Native mobile apps (Android / iOS)** — unlock fully continuous background tracking and always-on voice detection.
+- **Live police dashboard integration** — route SOS alerts directly to the nearest station in real time.
+- **Expanded zone coverage** — extend beyond the initial 682 zones to full national coverage.
+- **Continuous model retraining** — automated retraining pipelines fed by validated community reports.
+- **Offline-resilient SOS** — degraded-mode alerting when connectivity is poor.
 
 ---
 
