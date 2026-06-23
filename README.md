@@ -65,8 +65,6 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 
 > Replace the placeholders below with real screenshots / GIFs from your build — judges weight a working visual heavily. Drop files into `docs/screenshots/` and update the paths.
 
-<div align="center">
-
 <table>
   <tr>
     <td align="center" width="50%">
@@ -92,9 +90,6 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
     </td>
   </tr>
 </table>
-
-</div>
-
 ---
 
 ## System Architecture
