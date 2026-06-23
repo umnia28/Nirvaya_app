@@ -2,13 +2,13 @@
 
 # Nirvaya
 
-### AI-Powered Predictive Safety Platform for Bangladesh
+### AI-Powered Predictive Safety Platform for Women
 
 **Predict Risk · Prevent Incidents · Protect Lives**
 
 <br>
 
-> ### Nirvaya doesn't just help people survive emergencies — it helps them avoid them altogether.
+> ### Nirvaya doesn't just help people survive emergencies rather it helps them avoid them altogether.
 
 <br>
 
@@ -17,6 +17,12 @@
 ![Zones](https://img.shields.io/badge/682-Zones_Covered-2a9d6e?style=for-the-badge)
 ![SOS](https://img.shields.io/badge/Real--Time-SOS-9f1239?style=for-the-badge)
 ![Police](https://img.shields.io/badge/Police-Integration-8d2a50?style=for-the-badge)
+
+<br>
+
+[![Live Demo](https://img.shields.io/badge/▶_Live_Demo-Open_App-b13a66?style=for-the-badge)](https://nirvaya-app.vercel.app)
+
+**Try it live → [nirvaya-app.vercel.app](https://nirvaya-app.vercel.app)**
 
 </div>
 
@@ -53,6 +59,10 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 
 ## Demo
 
+**▶ Live app:** **[nirvaya-app.vercel.app](https://nirvaya-app.vercel.app)** — open in **Google Chrome** to enable Voice SOS (Web Speech API).
+
+> **Note:** The live link hosts the **React frontend** (UI, navigation, and design system). Full emergency functionality — SOS dispatch, community reports, and live AI risk prediction — also requires the Express/PostgreSQL backend and the Python risk model to be running. To experience the complete stack, follow [Getting Started](#getting-started) to run it locally, or point `VITE_API_URL` at a deployed backend.
+
 > Replace the placeholders below with real screenshots / GIFs from your build — judges weight a working visual heavily. Drop files into `docs/screenshots/` and update the paths.
 
 <div align="center">
@@ -64,8 +74,6 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 <td align="center" width="33%"><b>National Heatmap</b><br><br><img src="docs/screenshots/heatmap.png" alt="Heatmap" width="240"></td>
 </tr>
 </table>
-
-*Live demo:* `https://your-demo-link.example`
 
 </div>
 
@@ -282,7 +290,7 @@ If the user stays still for more than **10 minutes** in a high/critical zone, a 
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React (Vite) — no-login, anonymous device IDs |
+| **Frontend** | React (Vite) — no-login, anonymous device IDs · deployed on **Vercel** |
 | **Backend** | Node.js + Express — microservice-style routes |
 | **Database** | PostgreSQL |
 | **ML / Risk Model** | Python (training pipeline → deployed risk-scoring API) |
@@ -295,6 +303,8 @@ If the user stays still for more than **10 minutes** in a high/critical zone, a 
 ---
 
 ## Getting Started
+
+> **Just want to see it?** The frontend is live at **[nirvaya-app.vercel.app](https://nirvaya-app.vercel.app)** — open it in Chrome. For the full stack (SOS, reports, live AI risk), run it locally with the steps below.
 
 **Prerequisites:** Node.js 18+ · PostgreSQL 14+ · Python 3.11 (for the ML pipeline) · Google Chrome (Voice SOS uses the Web Speech API).
 
@@ -318,6 +328,8 @@ PORT=5000
 # client/.env
 VITE_API_URL=http://localhost:5000/api
 ```
+
+> On the Vercel deployment, set `VITE_API_URL` as an environment variable pointing to your hosted backend so the live frontend can reach the API.
 
 **3. Set up the database**
 
@@ -353,7 +365,7 @@ Open the printed local URL (Vite defaults to `http://localhost:5173`) **in Chrom
 
 ```text
 nirvaya/
-├── client/                  # React + Vite frontend
+├── client/                  # React + Vite frontend (deployed on Vercel)
 │   └── src/
 │       ├── pages/           # SosPage, HeatmapPage, SafeRoutesPage, SetupPage
 │       ├── services/        # deviceService, localProfileService, config
@@ -415,5 +427,7 @@ For this demonstration, Nirvaya was built as a **web application** rather than a
 **Nirvaya** — turning scattered crime data into a shield for the people who need it most.
 
 **Predict · Prevent · Protect**
+
+**[▶ Open the live app](https://nirvaya-app.vercel.app)**
 
 </div>
