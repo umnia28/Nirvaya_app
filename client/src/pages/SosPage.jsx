@@ -2036,6 +2036,49 @@ export default function SosPage() {
     }
   };
 
+  const getCurrentLocation = () => {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.log("❌ Geolocation NOT supported");
+      resolve(null);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        console.log("✅ Geolocation SUCCESS");
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.log("❌ Geolocation FAILED:", err.message);
+        resolve(null); // IMPORTANT: never crash UI
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
+    );
+  });
+};
+
+  const calculateDistanceMeters = (pointA, pointB) => {
+    if (!pointA || !pointB) return Infinity;
+    const R = 6371000;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const dLat = toRad(pointB.latitude - pointA.latitude);
+    const dLon = toRad(pointB.longitude - pointA.longitude);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(pointA.latitude)) *
+        Math.cos(toRad(pointB.latitude)) *
+        Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) return false;
 
@@ -2711,7 +2754,7 @@ export default function SosPage() {
               <button
                 className="small-button"
                 onClick={fetchSafeHours}
-                disabled={!currentCoords}
+                disabled={false}
               >
                 {safeHours ? "Refresh" : "Check"}
               </button>
