@@ -65,7 +65,10 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 
 > Replace the placeholders below with real screenshots / GIFs from your build — judges weight a working visual heavily. Drop files into `docs/screenshots/` and update the paths.
 
+<div align="center">
+
 <table>
+
   <tr>
     <td align="center" width="50%">
       <b>Live SOS & Risk (Before Trigger)</b><br><br>
@@ -81,15 +84,19 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
   <tr>
     <td align="center" width="50%">
       <b>Safe Route Planner</b><br><br>
-      <img src="client/docs/screenshots/SafeRoutes.png" alt="Safe routes" width="250">
+      <img src="client/docs/screenshots/SafeRoutes.png" alt="Safe route planner" width="250">
     </td>
 
     <td align="center" width="50%">
       <b>National Heatmap</b><br><br>
-      <img src="client/docs/screenshots/Safetyheatmap.png" alt="Heatmap" width="250">
+      <img src="client/docs/screenshots/Safetyheatmap.png" alt="National heatmap" width="250">
     </td>
   </tr>
+
 </table>
+
+</div>
+
 ---
 
 ## System Architecture
