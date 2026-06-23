@@ -63,36 +63,29 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 
 > **Note:** The live link hosts the **React frontend** (UI, navigation, and design system). Full emergency functionality — SOS dispatch, community reports, and live AI risk prediction — also requires the Express/PostgreSQL backend and the Python risk model to be running. To experience the complete stack, follow [Getting Started](#getting-started) to run it locally, or point `VITE_API_URL` at a deployed backend.
 
-> Replace the placeholders below with real screenshots / GIFs from your build — judges weight a working visual heavily. Drop files into `docs/screenshots/` and update the paths.
-
 <div align="center">
 
 <table>
-
   <tr>
     <td align="center" width="50%">
       <b>Live SOS & Risk (Before Trigger)</b><br><br>
       <img src="client/docs/screenshots/SOS1.png" alt="SOS screen before trigger" width="250">
     </td>
-
     <td align="center" width="50%">
       <b>Live SOS & Risk (After Trigger)</b><br><br>
       <img src="client/docs/screenshots/SOS2.png" alt="SOS screen after trigger" width="250">
     </td>
   </tr>
-
   <tr>
     <td align="center" width="50%">
       <b>Safe Route Planner</b><br><br>
       <img src="client/docs/screenshots/SafeRoutes.png" alt="Safe route planner" width="250">
     </td>
-
     <td align="center" width="50%">
       <b>National Heatmap</b><br><br>
       <img src="client/docs/screenshots/Safetyheatmap.png" alt="National heatmap" width="250">
     </td>
   </tr>
-
 </table>
 
 </div>
