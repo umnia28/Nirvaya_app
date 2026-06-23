@@ -553,22 +553,33 @@ export default function SosPage() {
   };
 
   const getCurrentLocation = () => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation not supported."));
-        return;
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.log("❌ Geolocation NOT supported");
+      resolve(null);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        console.log("✅ Geolocation SUCCESS");
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.log("❌ Geolocation FAILED:", err.message);
+        resolve(null); // IMPORTANT: never crash UI
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
       }
-      navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          resolve({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          }),
-        (err) => reject(new Error(err.message || "Failed to get location.")),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-      );
-    });
-  };
+    );
+  });
+};
 
   const calculateDistanceMeters = (pointA, pointB) => {
     if (!pointA || !pointB) return Infinity;
