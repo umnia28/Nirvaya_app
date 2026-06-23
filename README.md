@@ -69,9 +69,9 @@ From route planning to emergency response, Nirvaya creates a continuously evolvi
 
 <table>
 <tr>
-<td align="center" width="33%"><b>Live SOS & Risk</b><br><br><img src="C:/Users/mominul.islam/Documents/Nirvaya_app/client/docs/screenshots/SOS.png" alt="SOS screen" width="240"></td>
-<td align="center" width="33%"><b>Safe Route Planner</b><br><br><img src="C:/Users/mominul.islam/Documents/Nirvaya_app/client/docs/screenshots/SafeRoutes.png" alt="Safe routes" width="240"></td>
-<td align="center" width="33%"><b>National Heatmap</b><br><br><img src="C:/Users/mominul.islam/Documents/Nirvaya_app/client/docs/screenshots/Safetyheatmap.png" alt="Heatmap" width="240"></td>
+<td align="center" width="33%"><b>Live SOS & Risk</b><br><br><img src="client/docs/screenshots/SOS.png" alt="SOS screen" width="240"></td>
+<td align="center" width="33%"><b>Safe Route Planner</b><br><br><img src="client/docs/screenshots/SafeRoutes.png" alt="Safe routes" width="240"></td>
+<td align="center" width="33%"><b>National Heatmap</b><br><br><img src="client/docs/screenshots/Safetyheatmap.png" alt="Heatmap" width="240"></td>
 </tr>
 </table>
 
