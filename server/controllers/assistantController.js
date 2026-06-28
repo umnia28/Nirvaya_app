@@ -1,29 +1,94 @@
 // server/controllers/assistantController.js
 //
-// GEMINI version (Google AI Studio free tier).
-//   1. Gemini call #1  -> extract { origin, destination, hour } from the question
-//   2. analyzeRouteSafety() -> grounded numbers from your Random Forest
-//   3. Gemini call #2  -> natural-language answer (with template fallback)
+// HYBRID version — robust.
+//   1. Regex parse        -> { origin, destination, hour }   (deterministic, never fails)
+//   2. analyzeRouteSafety -> grounded numbers from your Random Forest
+//   3. Gemini synthesis   -> natural answer, with template fallback if Gemini is down
 //
-// Needs GEMINI_API_KEY (free from https://aistudio.google.com/apikey) and ORS_API_KEY.
-// No Anthropic SDK, no npm install — uses plain fetch.
+// Extraction no longer depends on any LLM, so well-formed questions always work.
+// Needs ORS_API_KEY. GEMINI_API_KEY is optional now (only used to prettify the prose).
 
 import { analyzeRouteSafety } from "../services/safetyAssistantService.js";
 
-// Any free Flash-family model works; override with GEMINI_MODEL if one is retired.
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const callGemini = async ({ system, user, json = false, maxTokens = 500, temperature = 0.4 }) => {
-  if (!GEMINI_KEY) throw new Error("GEMINI_API_KEY is missing in environment variables");
+// ---------------------------------------------------------------------------
+// 1) Parse the question  (no LLM)
+// ---------------------------------------------------------------------------
+
+const parseHour = (text) => {
+  const t = text.toLowerCase();
+  if (/\bnoon\b/.test(t)) return 12;
+  if (/\bmidnight\b/.test(t)) return 0;
+
+  const h24 = t.match(/\b([01]?\d|2[0-3])[:.]\s*[0-5]\d\b/);
+  if (h24) return Number(h24[1]);
+
+  const ampm = t.match(/\b(\d{1,2})\s*(?:o'?clock\s*)?(a\.?m\.?|p\.?m\.?)\b/);
+  if (ampm) {
+    let h = Number(ampm[1]) % 12;
+    if (/p/.test(ampm[2])) h += 12;
+    return h;
+  }
+
+  const bare = t.match(/\bat\s+(\d{1,2})\b/);
+  if (bare) {
+    const h = Number(bare[1]);
+    if (h >= 0 && h <= 23) return h;
+  }
+  return null; // service falls back to current Dhaka hour
+};
+
+const parsePlaces = (text) => {
+  const cleaned = text
+    .replace(/\bat\s+\d{1,2}\s*(?:o'?clock)?\s*(?:a\.?m\.?|p\.?m\.?)?\b/gi, " ")
+    .replace(/\b([01]?\d|2[0-3])[:.]\s*[0-5]\d\b/g, " ")
+    .replace(/\b(right now|now|tonight|today|noon|midnight)\b/gi, " ")
+    .replace(/[?.!]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  let m = cleaned.match(/from\s+(.+?)\s+to\s+(.+)/i);
+  if (m) return { origin: m[1].trim(), destination: m[2].trim() };
+
+  m = cleaned.match(/^(.+?)\s+to\s+(.+)/i);
+  if (m) return { origin: m[1].trim(), destination: m[2].trim() };
+
+  return { origin: null, destination: null };
+};
+
+// ---------------------------------------------------------------------------
+// 3a) Gemini synthesis  (optional — prettifies the answer)
+// ---------------------------------------------------------------------------
+
+const geminiSynthesize = async (question, analysis) => {
+  if (!GEMINI_KEY) return null;
+
+  const { safest_route_geometry, ...slim } = analysis;
+
+  const system = `You are Nirvaya's safety assistant for Bangladesh. You are given pre-computed
+risk data from a trained model. Write a short, calm, practical answer (4-7 sentences, plain prose,
+no markdown, no bullet points) covering, in order: route risk, the risk the requested hour adds,
+the safer alternative route (with the time trade-off if slower), and the recommended travel window.
+Only use the numbers provided; never invent figures. If risk is high or the hour is unsafe, add one
+or two concrete precautions (share live location, prefer a trusted ride-hailing service, travel with
+company). Be reassuring and direct, not alarmist.`;
 
   const body = {
-    contents: [{ role: "user", parts: [{ text: user }] }],
-    generationConfig: { maxOutputTokens: maxTokens, temperature },
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: `${system}\n\nUser question: "${question}"\n\nRisk data (JSON):\n${JSON.stringify(slim, null, 2)}`,
+          },
+        ],
+      },
+    ],
+    generationConfig: { maxOutputTokens: 500, temperature: 0.5 },
   };
-  if (system) body.system_instruction = { parts: [{ text: system }] };
-  if (json) body.generationConfig.responseMimeType = "application/json";
 
   const res = await fetch(GEMINI_URL, {
     method: "POST",
@@ -31,68 +96,18 @@ const callGemini = async ({ system, user, json = false, maxTokens = 500, tempera
     body: JSON.stringify(body),
   });
 
+  if (!res.ok) return null;
   const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message || `Gemini request failed (${res.status})`);
-  }
-
-  return (
-    data?.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text)
-      .filter(Boolean)
-      .join("")
-      .trim() || ""
-  );
+  const text =
+    data?.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join("").trim() || "";
+  return text || null;
 };
 
-const safeJsonParse = (text) => {
-  const cleaned = String(text || "").replace(/```json/gi, "").replace(/```/g, "").trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) {
-      try {
-        return JSON.parse(m[0]);
-      } catch {
-        /* ignore */
-      }
-    }
-    return null;
-  }
-};
+// ---------------------------------------------------------------------------
+// 3b) Template answer  (always works, used as fallback)
+// ---------------------------------------------------------------------------
 
-const extractQuery = async (question) => {
-  const system = `You extract structured travel-safety queries for Bangladesh (mostly Dhaka).
-Return ONLY a JSON object:
-{"origin": string|null, "destination": string|null, "hour": integer 0-23 | null, "district": string}
-- origin/destination: area or place names exactly as written (e.g. "Bashundhara", "Mirpur"). null if not stated.
-- hour: convert clock time to 24h (10 PM -> 22, "9am" -> 9, "midnight" -> 0, "noon" -> 12). null if no time mentioned.
-- district: best-guess Dhaka-area district; otherwise "Dhaka".`;
-
-  const text = await callGemini({ system, user: question, json: true, maxTokens: 200, temperature: 0 });
-  return safeJsonParse(text);
-};
-
-const synthesizeAnswer = async (question, analysis) => {
-  const { safest_route_geometry, ...slim } = analysis;
-
-  const system = `You are Nirvaya's safety assistant for Bangladesh. You are given pre-computed
-risk data from a trained model. Write a short, calm, practical answer (4-7 sentences, plain prose,
-no markdown headers, no bullet points) covering, in order:
-1. Route risk — how safe the path itself is.
-2. Time risk — what the requested hour adds (the route can be fine while the hour is the problem).
-3. The safer alternative route — and the time trade-off if it's slower.
-4. The recommended travel window — the safest hours to go.
-Only use the numbers provided; never invent figures. If risk is high or the hour is unsafe, give one or two
-concrete precautions (share live location, prefer a trusted ride-hailing service, travel with company).
-Be reassuring and direct, not alarmist.`;
-
-  const user = `User question: "${question}"\n\nRisk data (JSON):\n${JSON.stringify(slim, null, 2)}`;
-  return callGemini({ system, user, maxTokens: 500, temperature: 0.5 });
-};
-
-const buildFallbackAnswer = (a) => {
+const buildAnswer = (a) => {
   const o = a.origin?.label || "your start";
   const d = a.destination?.label || "your destination";
   const win = a.recommended_window;
@@ -127,6 +142,10 @@ const buildFallbackAnswer = (a) => {
   return parts.join(" ");
 };
 
+// ---------------------------------------------------------------------------
+// Handler
+// ---------------------------------------------------------------------------
+
 export const askSafetyAssistant = async (req, res) => {
   try {
     const { question } = req.body;
@@ -134,36 +153,38 @@ export const askSafetyAssistant = async (req, res) => {
       return res.status(400).json({ success: false, message: "A question is required" });
     }
 
-    const parsed = await extractQuery(question);
-    if (!parsed?.origin || !parsed?.destination) {
+    const { origin, destination } = parsePlaces(question);
+    const hour = parseHour(question);
+
+    if (!origin || !destination) {
       return res.status(200).json({
         success: true,
         answer:
-          "Tell me where you're starting from and where you're heading (and a time, if you have one) — for example, “Is it safe to travel from Bashundhara to Mirpur at 10 PM?”",
+          "Tell me where you're starting from and where you're heading (and a time, if you have one) — for example, “from Bashundhara to Mirpur at 10 PM”.",
         data: null,
       });
     }
 
     const analysis = await analyzeRouteSafety({
-      origin: parsed.origin,
-      destination: parsed.destination,
-      hour: Number.isInteger(parsed.hour) ? parsed.hour : null,
-      district: parsed.district || "Dhaka",
+      origin,
+      destination,
+      hour: Number.isInteger(hour) ? hour : null,
+      district: "Dhaka",
     });
 
     let answer = null;
     try {
-      answer = await synthesizeAnswer(question, analysis);
+      answer = await geminiSynthesize(question, analysis);
     } catch (llmErr) {
-      console.warn("Assistant synthesis failed, using fallback:", llmErr.message);
+      console.warn("Gemini synthesis failed, using template:", llmErr.message);
     }
-    if (!answer) answer = buildFallbackAnswer(analysis);
+    if (!answer) answer = buildAnswer(analysis);
 
     return res.status(200).json({
       success: true,
       answer,
       data: analysis,
-      meta: { origin: parsed.origin, destination: parsed.destination, hour: analysis.requested_hour },
+      meta: { origin, destination, hour: analysis.requested_hour },
     });
   } catch (error) {
     console.error("Safety assistant error:", error);
