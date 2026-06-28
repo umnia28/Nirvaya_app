@@ -97,34 +97,53 @@ const getBangladeshTimeInfo = () => {
   return { hour, day_of_week: map[weekday] ?? 0 };
 };
 
-// Geocode a place, disambiguated by district so same-named towns elsewhere in
-// Bangladesh don't get matched (e.g. "Mirpur" -> "Mirpur, Dhaka, Bangladesh").
+const normaliseText = (s) =>
+  String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+// Geocode a place. Instead of appending ", Dhaka" to the text (which biased ORS
+// toward the city admin area and collapsed origins like "Bashundhara" to Dhaka),
+// we constrain the SEARCH AREA to greater Dhaka and prefer the candidate whose
+// name actually matches the query.
 const geocodePlace = async (place, region = "Dhaka") => {
-  let text = String(place).trim();
-  if (region && !text.toLowerCase().includes(region.toLowerCase())) {
-    text += `, ${region}`;
-  }
-  if (!text.toLowerCase().includes("bangladesh")) {
-    text += ", Bangladesh";
-  }
+  const query = String(place).trim();
 
   const params = new URLSearchParams({
-    text,
+    text: query,
     "boundary.country": "BD",
     "focus.point.lat": String(DHAKA_FOCUS.lat),
     "focus.point.lon": String(DHAKA_FOCUS.lon),
-    size: "1",
+    size: "5",
   });
+
+  // Keep results inside greater Dhaka so same-named towns elsewhere (e.g. Mirpur
+  // in Kushtia) are excluded — without polluting the text with ", Dhaka".
+  if (/dhaka/i.test(region)) {
+    params.set("boundary.circle.lat", String(DHAKA_FOCUS.lat));
+    params.set("boundary.circle.lon", String(DHAKA_FOCUS.lon));
+    params.set("boundary.circle.radius", "45"); // km
+  }
 
   const res = await fetch(`${ORS_BASE_URL}/geocode/search?${params}`, {
     headers: { Authorization: ORS_API_KEY },
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message || `Could not locate "${place}"`);
-  const feature = data?.features?.[0];
-  if (!feature) throw new Error(`Could not find "${place}" in Bangladesh`);
-  const [longitude, latitude] = feature.geometry.coordinates;
-  return { latitude, longitude, label: feature.properties?.label || place };
+
+  const features = data?.features || [];
+  if (!features.length) throw new Error(`Could not find "${place}" near Dhaka`);
+
+  // Prefer the candidate whose name/label actually contains what was typed,
+  // so "Bashundhara" picks the neighbourhood, not the generic "Dhaka".
+  const want = normaliseText(query);
+  const best =
+    features.find((f) => {
+      const label = normaliseText(f.properties?.label);
+      const name = normaliseText(f.properties?.name);
+      return name.includes(want) || label.includes(want);
+    }) || features[0];
+
+  const [longitude, latitude] = best.geometry.coordinates;
+  return { latitude, longitude, label: best.properties?.label || place };
 };
 
 // Low-level ORS directions call. `withAlternatives` adds the alternative-routes
