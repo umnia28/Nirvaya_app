@@ -5,19 +5,37 @@
 // ORS helpers from your safe-alternatives controller — but parameterised by hour
 // so it can answer "is it safe at 10 PM?" and sweep the whole day for a window.
 //
-// It does NOT import or modify any of your controllers, so nothing working breaks.
+// Works for the whole of Bangladesh: geocoding resolves any area in the country,
+// and the district fed to the risk model is auto-detected from the geocoded place.
 
 import { predictRiskBatchWithModel } from "../utils/riskModel.js";
 
 const ORS_API_KEY = process.env.ORS_API_KEY;
 const ORS_BASE_URL = "https://api.openrouteservice.org";
 
-// Bias geocoding toward Dhaka so area names like "Mirpur" resolve correctly.
+// Soft bias: only used to break ties between same-named places (e.g. "Mirpur").
+// It never excludes results, so places anywhere in Bangladesh still resolve.
 const DHAKA_FOCUS = { lat: 23.78, lon: 90.4 };
 
 // Keep the 24-hour sweep cheap: cap how many points we score per hour.
 const SWEEP_MAX_POINTS = 12;
 const SAMPLE_INTERVAL_METERS = 200;
+
+// Bangladesh's 64 districts — used to map a geocoded place to a district name
+// the risk model recognises.
+const BD_DISTRICTS = [
+  "Bagerhat", "Bandarban", "Barguna", "Barishal", "Bhola", "Bogura",
+  "Brahmanbaria", "Chandpur", "Chapai Nawabganj", "Chattogram", "Chuadanga",
+  "Cox's Bazar", "Cumilla", "Dhaka", "Dinajpur", "Faridpur", "Feni", "Gaibandha",
+  "Gazipur", "Gopalganj", "Habiganj", "Jamalpur", "Jashore", "Jhalokathi",
+  "Jhenaidah", "Joypurhat", "Khagrachhari", "Khulna", "Kishoreganj", "Kurigram",
+  "Kushtia", "Lakshmipur", "Lalmonirhat", "Madaripur", "Magura", "Manikganj",
+  "Meherpur", "Moulvibazar", "Munshiganj", "Mymensingh", "Naogaon", "Narail",
+  "Narayanganj", "Narsingdi", "Natore", "Netrokona", "Nilphamari", "Noakhali",
+  "Pabna", "Panchagarh", "Patuakhali", "Pirojpur", "Rajbari", "Rajshahi",
+  "Rangamati", "Rangpur", "Satkhira", "Shariatpur", "Sherpur", "Sirajganj",
+  "Sunamganj", "Sylhet", "Tangail", "Thakurgaon",
+];
 
 // ---------------------------------------------------------------------------
 // geo helpers (copied from your safe-alternatives controller, kept identical)
@@ -100,11 +118,27 @@ const getBangladeshTimeInfo = () => {
 const normaliseText = (s) =>
   String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
-// Geocode a place. Instead of appending ", Dhaka" to the text (which biased ORS
-// toward the city admin area and collapsed origins like "Bashundhara" to Dhaka),
-// we constrain the SEARCH AREA to greater Dhaka and prefer the candidate whose
-// name actually matches the query.
-const geocodePlace = async (place, region = "Dhaka") => {
+// Map a geocoded feature to one of Bangladesh's 64 districts (whole-word match),
+// falling back to the supplied default if nothing recognisable is found.
+const inferDistrict = (feature, fallback = "Dhaka") => {
+  const props = feature?.properties || {};
+  const hay =
+    " " +
+    normaliseText(
+      [props.county, props.region, props.macrocounty, props.localadmin, props.locality, props.label]
+        .filter(Boolean)
+        .join(" ")
+    ) +
+    " ";
+  const found = BD_DISTRICTS.find((d) => hay.includes(` ${normaliseText(d)} `));
+  return found || fallback;
+};
+
+// Geocode a place anywhere in Bangladesh. Asks for several candidates and prefers
+// the one whose name actually matches the query, so neighbourhoods resolve to the
+// neighbourhood (not the city). Same-named places default to the Dhaka-closest one;
+// users can disambiguate by adding the city, e.g. "Mirpur, Kushtia".
+const geocodePlace = async (place, fallbackDistrict = "Dhaka") => {
   const query = String(place).trim();
 
   const params = new URLSearchParams({
@@ -115,14 +149,6 @@ const geocodePlace = async (place, region = "Dhaka") => {
     size: "5",
   });
 
-  // Keep results inside greater Dhaka so same-named towns elsewhere (e.g. Mirpur
-  // in Kushtia) are excluded — without polluting the text with ", Dhaka".
-  if (/dhaka/i.test(region)) {
-    params.set("boundary.circle.lat", String(DHAKA_FOCUS.lat));
-    params.set("boundary.circle.lon", String(DHAKA_FOCUS.lon));
-    params.set("boundary.circle.radius", "45"); // km
-  }
-
   const res = await fetch(`${ORS_BASE_URL}/geocode/search?${params}`, {
     headers: { Authorization: ORS_API_KEY },
   });
@@ -130,10 +156,8 @@ const geocodePlace = async (place, region = "Dhaka") => {
   if (!res.ok) throw new Error(data?.error?.message || `Could not locate "${place}"`);
 
   const features = data?.features || [];
-  if (!features.length) throw new Error(`Could not find "${place}" near Dhaka`);
+  if (!features.length) throw new Error(`Could not find "${place}" in Bangladesh`);
 
-  // Prefer the candidate whose name/label actually contains what was typed,
-  // so "Bashundhara" picks the neighbourhood, not the generic "Dhaka".
   const want = normaliseText(query);
   const best =
     features.find((f) => {
@@ -143,7 +167,12 @@ const geocodePlace = async (place, region = "Dhaka") => {
     }) || features[0];
 
   const [longitude, latitude] = best.geometry.coordinates;
-  return { latitude, longitude, label: best.properties?.label || place };
+  return {
+    latitude,
+    longitude,
+    label: best.properties?.label || place,
+    district: inferDistrict(best, fallbackDistrict),
+  };
 };
 
 // Low-level ORS directions call. `withAlternatives` adds the alternative-routes
@@ -267,7 +296,7 @@ const findSafestWindow = (safeFlags) => {
  * @param {string} origin       e.g. "Bashundhara"
  * @param {string} destination  e.g. "Mirpur"
  * @param {number|null} hour    0-23, or null to use current Dhaka time
- * @param {string} district     defaults to "Dhaka"
+ * @param {string} district     fallback district if it can't be auto-detected
  */
 export const analyzeRouteSafety = async ({
   origin,
@@ -281,11 +310,14 @@ export const analyzeRouteSafety = async ({
   const requestedHour = Number.isInteger(hour) ? hour : now.hour;
   const dayOfWeek = now.day_of_week;
 
-  // 1) resolve both endpoints to coordinates (district-disambiguated)
+  // 1) resolve both endpoints to coordinates (anywhere in Bangladesh)
   const [from, to] = await Promise.all([
     geocodePlace(origin, district),
     geocodePlace(destination, district),
   ]);
+
+  // District fed to the risk model — detected from the trip (destination first).
+  const tripDistrict = to.district || from.district || district;
 
   // 2) candidate routes (falls back to a single route for long trips)
   const routes = await getAlternativeRoutes({
@@ -307,7 +339,7 @@ export const analyzeRouteSafety = async ({
   sampledByRoute.forEach((pts) => {
     const start = rankBatch.length;
     pts.forEach(([lon, lat]) =>
-      rankBatch.push({ latitude: lat, longitude: lon, district, hour: requestedHour, day_of_week: dayOfWeek })
+      rankBatch.push({ latitude: lat, longitude: lon, district: tripDistrict, hour: requestedHour, day_of_week: dayOfWeek })
     );
     ranges.push([start, rankBatch.length]);
   });
@@ -345,7 +377,7 @@ export const analyzeRouteSafety = async ({
   const sweepBatch = [];
   HOURS.forEach((h) =>
     sweepPoints.forEach(([lon, lat]) =>
-      sweepBatch.push({ latitude: lat, longitude: lon, district, hour: h, day_of_week: dayOfWeek })
+      sweepBatch.push({ latitude: lat, longitude: lon, district: tripDistrict, hour: h, day_of_week: dayOfWeek })
     )
   );
   const sweepPreds = await predictRiskBatchWithModel(sweepBatch);
@@ -386,7 +418,7 @@ export const analyzeRouteSafety = async ({
     destination: to,
     requested_hour: requestedHour,
     requested_hour_label: fmtHour(requestedHour),
-    district,
+    district: tripDistrict,
 
     route_risk: {
       level: safest.level,
@@ -409,7 +441,6 @@ export const analyzeRouteSafety = async ({
     },
 
     safer_alternative: {
-      // the safest route, and how it compares to the fastest option
       safest: trim(safest),
       fastest: trim(fastest),
       differs_from_fastest: safest.index !== fastest.index,
@@ -419,9 +450,8 @@ export const analyzeRouteSafety = async ({
           : 0,
     },
 
-    recommended_window: window, // { from_label, to_label, length_hours } | null
+    recommended_window: window,
 
-    // safest route geometry so the client can draw it if you want
     safest_route_geometry: safest.geometry,
   };
 };
