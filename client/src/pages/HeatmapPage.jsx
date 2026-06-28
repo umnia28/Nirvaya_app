@@ -150,7 +150,7 @@
           </header>
   
           <div className="sidebar-section">
-            <span className="section-label">District</span>
+            <span className="section-label">Division</span>
             <div className="district-buttons" role="tablist">
               {DISTRICTS.map((district) => (
                 <button
