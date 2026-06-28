@@ -97,14 +97,25 @@ const getBangladeshTimeInfo = () => {
   return { hour, day_of_week: map[weekday] ?? 0 };
 };
 
-const geocodePlace = async (place) => {
+// Geocode a place, disambiguated by district so same-named towns elsewhere in
+// Bangladesh don't get matched (e.g. "Mirpur" -> "Mirpur, Dhaka, Bangladesh").
+const geocodePlace = async (place, region = "Dhaka") => {
+  let text = String(place).trim();
+  if (region && !text.toLowerCase().includes(region.toLowerCase())) {
+    text += `, ${region}`;
+  }
+  if (!text.toLowerCase().includes("bangladesh")) {
+    text += ", Bangladesh";
+  }
+
   const params = new URLSearchParams({
-    text: place,
+    text,
     "boundary.country": "BD",
     "focus.point.lat": String(DHAKA_FOCUS.lat),
     "focus.point.lon": String(DHAKA_FOCUS.lon),
     size: "1",
   });
+
   const res = await fetch(`${ORS_BASE_URL}/geocode/search?${params}`, {
     headers: { Authorization: ORS_API_KEY },
   });
@@ -116,22 +127,51 @@ const geocodePlace = async (place) => {
   return { latitude, longitude, label: feature.properties?.label || place };
 };
 
-const getAlternativeRoutes = async ({ startLat, startLon, endLat, endLon }) => {
+// Low-level ORS directions call. `withAlternatives` adds the alternative-routes
+// block, which ORS only permits for trips under ~100 km.
+const fetchRoutes = async ({ startLat, startLon, endLat, endLon }, withAlternatives) => {
+  const body = {
+    coordinates: [
+      [startLon, startLat],
+      [endLon, endLat],
+    ],
+    instructions: false,
+  };
+
+  if (withAlternatives) {
+    body.alternative_routes = { target_count: 3, share_factor: 0.6, weight_factor: 1.6 };
+  }
+
   const res = await fetch(`${ORS_BASE_URL}/v2/directions/driving-car/geojson`, {
     method: "POST",
     headers: { Authorization: ORS_API_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      coordinates: [
-        [startLon, startLat],
-        [endLon, endLat],
-      ],
-      alternative_routes: { target_count: 3, share_factor: 0.6, weight_factor: 1.6 },
-      instructions: false,
-    }),
+    body: JSON.stringify(body),
   });
+
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || "Failed to get routes");
-  return data?.features || [];
+  return { ok: res.ok, status: res.status, data };
+};
+
+const getAlternativeRoutes = async ({ startLat, startLon, endLat, endLon }) => {
+  const coords = { startLat, startLon, endLat, endLon };
+
+  // First try: multiple alternatives (only allowed under ~100 km).
+  let result = await fetchRoutes(coords, true);
+
+  // ORS rejects alternatives past 100 km — retry as a single direct route.
+  const message = result.data?.error?.message || "";
+  const tooFarForAlternatives =
+    !result.ok && /100000(\.0)?\s*meters|alternative\s*Routes algorithm|exceed/i.test(message);
+
+  if (tooFarForAlternatives) {
+    result = await fetchRoutes(coords, false);
+  }
+
+  if (!result.ok) {
+    throw new Error(result.data?.error?.message || "Failed to get routes");
+  }
+
+  return result.data?.features || [];
 };
 
 // ---------------------------------------------------------------------------
@@ -222,13 +262,13 @@ export const analyzeRouteSafety = async ({
   const requestedHour = Number.isInteger(hour) ? hour : now.hour;
   const dayOfWeek = now.day_of_week;
 
-  // 1) resolve both endpoints to coordinates
+  // 1) resolve both endpoints to coordinates (district-disambiguated)
   const [from, to] = await Promise.all([
-    geocodePlace(origin),
-    geocodePlace(destination),
+    geocodePlace(origin, district),
+    geocodePlace(destination, district),
   ]);
 
-  // 2) candidate routes
+  // 2) candidate routes (falls back to a single route for long trips)
   const routes = await getAlternativeRoutes({
     startLat: from.latitude,
     startLon: from.longitude,
