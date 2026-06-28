@@ -1222,3 +1222,32 @@ button:focus-visible {
     flex: 1;
   }
 }
+
+.assistant-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  height: 82vh;
+  max-height: 82vh;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fff5f7;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.18);
+}
+
+.assistant-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #ad1457;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
