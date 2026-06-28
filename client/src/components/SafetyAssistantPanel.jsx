@@ -1,8 +1,7 @@
 // client/src/components/SafetyAssistantPanel.jsx
 //
-// Rose Quartz Safety Assistant panel — styled with your SosPage.css
-// class system (.sa-* classes) so it matches your exact theme tokens.
-// Logic is unchanged; only the markup/styling switched from inline to classes.
+// Rose Quartz Safety Assistant panel — styled with your SosPage.css (.sa-* classes).
+// Cards restructured for cleaner alignment: label + badge on one row, value below.
 
 import { useState, useRef, useEffect } from "react";
 import {
@@ -27,6 +26,23 @@ const badgeClass = (level) => {
   return `sa-badge ${map[level] || "sa-badge-low"}`;
 };
 
+function Card({ icon: Icon, label, level, children }) {
+  return (
+    <div className={`sa-card${level ? ` sa-card-${level}` : ""}`}>
+      <div className="sa-card-icon">
+        <Icon size={17} strokeWidth={2.1} />
+      </div>
+      <div className="sa-card-body">
+        <div className="sa-card-head">
+          <p className="sa-card-label">{label}</p>
+          {level && <span className={badgeClass(level)}>{level}</span>}
+        </div>
+        <p className="sa-card-value">{children}</p>
+      </div>
+    </div>
+  );
+}
+
 function AssistantCards({ data }) {
   if (!data) return null;
   const {
@@ -38,73 +54,29 @@ function AssistantCards({ data }) {
 
   return (
     <div className="sa-cards">
-      <div className="sa-card">
-        <div className="sa-card-icon">
-          <Route size={18} />
-        </div>
-        <div className="sa-card-body">
-          <p className="sa-card-label">Route risk</p>
-          <div className="sa-card-value">
-            <span>
-              {rr.distance_km
-                ? `Safest path · ${rr.distance_km} km · ${rr.duration_min} min`
-                : "Safest path ready"}
-            </span>
-            <span className={badgeClass(rr.level)}>{rr.level}</span>
-          </div>
-        </div>
-      </div>
+      <Card icon={Route} label="Route risk" level={rr.level}>
+        {rr.distance_km
+          ? `Safest path · ${rr.distance_km} km · ${rr.duration_min} min`
+          : "Safest path ready"}
+      </Card>
 
-      <div className="sa-card">
-        <div className="sa-card-icon">
-          <Clock size={18} />
-        </div>
-        <div className="sa-card-body">
-          <p className="sa-card-label">Time risk at {data.requested_hour_label}</p>
-          <div className="sa-card-value">
-            <span>
-              {tr.requested_hour_is_safe
-                ? "One of the calmer hours on this route"
-                : `Quieter around ${rr.baseline_hour_label}`}
-            </span>
-            <span className={badgeClass(tr.level)}>{tr.level}</span>
-          </div>
-        </div>
-      </div>
+      <Card icon={Clock} label={`Time risk at ${data.requested_hour_label}`} level={tr.level}>
+        {tr.requested_hour_is_safe
+          ? "One of the calmer hours on this route"
+          : `Quieter around ${rr.baseline_hour_label}`}
+      </Card>
 
-      <div className="sa-card">
-        <div className="sa-card-icon">
-          <Navigation size={18} />
-        </div>
-        <div className="sa-card-body">
-          <p className="sa-card-label">Safer alternative</p>
-          <div className="sa-card-value">
-            <span>
-              {sa.differs_from_fastest
-                ? `Safer route available${
-                    sa.extra_minutes > 0 ? ` · ~${sa.extra_minutes} min slower` : ""
-                  }`
-                : "Safest route is also among the quickest"}
-            </span>
-          </div>
-        </div>
-      </div>
+      <Card icon={Navigation} label="Safer alternative">
+        {sa.differs_from_fastest
+          ? `Safer route available${sa.extra_minutes > 0 ? ` · ~${sa.extra_minutes} min slower` : ""}`
+          : "Safest route is also among the quickest"}
+      </Card>
 
-      <div className="sa-card">
-        <div className="sa-card-icon">
-          <CalendarClock size={18} />
-        </div>
-        <div className="sa-card-body">
-          <p className="sa-card-label">Recommended window</p>
-          <div className="sa-card-value">
-            <span>
-              {win
-                ? `Safest from ${win.from_label} to ${win.to_label}`
-                : "No clearly safer window today — stay alert whenever you travel"}
-            </span>
-          </div>
-        </div>
-      </div>
+      <Card icon={CalendarClock} label="Recommended window">
+        {win
+          ? `Safest from ${win.from_label} to ${win.to_label}`
+          : "No clearly safer window today — stay alert whenever you travel"}
+      </Card>
     </div>
   );
 }
@@ -165,9 +137,9 @@ export default function SafetyAssistantPanel() {
     <div className="sa-panel">
       <div className="sa-header">
         <div className="sa-header-icon">
-          <Shield size={19} />
+          <Shield size={18} strokeWidth={2.2} />
         </div>
-        <div>
+        <div className="sa-header-text">
           <p className="sa-header-title">Safety Assistant</p>
           <p className="sa-header-sub">Route · time · safer path · best window</p>
         </div>
@@ -177,9 +149,7 @@ export default function SafetyAssistantPanel() {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`sa-row ${
-              m.role === "user" ? "sa-row-user" : "sa-row-assistant"
-            }`}
+            className={`sa-row ${m.role === "user" ? "sa-row-user" : "sa-row-assistant"}`}
           >
             <div
               className={`sa-bubble ${
@@ -224,6 +194,7 @@ export default function SafetyAssistantPanel() {
           className="sa-send"
           onClick={() => send()}
           disabled={loading || !input.trim()}
+          aria-label="Send"
         >
           <Send size={18} />
         </button>

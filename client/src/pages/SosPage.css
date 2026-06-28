@@ -1225,9 +1225,8 @@ button:focus-visible {
 
 /* ============================================================
    AI Safety Assistant — append to the END of SosPage.css
-   Uses the existing Rose Quartz tokens (--nv-*), fonts, shadows
-   and eases, so the panel matches the page natively.
-   Non-destructive: defines only new classes.
+   (Replaces any earlier .assistant-* / .sa-* block.)
+   Uses the Rose Quartz tokens (--nv-*), fonts, shadows, eases.
    ============================================================ */
 
 /* ---------- Slide-up sheet that holds the panel ---------- */
@@ -1252,22 +1251,24 @@ button:focus-visible {
   z-index: 6;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 50%;
-  background: #f6ecf1;
+  background: rgba(255, 255, 255, 0.85);
   color: var(--nv-ink-soft);
   cursor: pointer;
+  backdrop-filter: blur(4px);
   transition: background 0.18s var(--ease-soft), transform 0.18s var(--ease-spring);
 }
 
 .assistant-close:hover {
-  background: #efdfe8;
+  background: #fff;
+  color: var(--nv-primary);
 }
 
 .assistant-close:active {
-  transform: scale(0.94);
+  transform: scale(0.92);
 }
 
 /* ---------- Panel shell ---------- */
@@ -1279,36 +1280,45 @@ button:focus-visible {
   font-family: var(--nv-font);
   color: var(--nv-ink);
   background:
-    radial-gradient(420px 300px at 90% -10%, rgba(225, 29, 72, 0.05), transparent 60%),
+    radial-gradient(460px 320px at 92% -12%, rgba(225, 29, 72, 0.05), transparent 60%),
     var(--nv-bg);
 }
 
 .sa-header {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 16px 18px;
+  gap: 12px;
+  padding: 18px 18px 16px;
   border-bottom: 1px solid var(--nv-line);
-  background: linear-gradient(180deg, #ffffff, #fdf8fa);
+  background: linear-gradient(180deg, #ffffff, #fdf6f9);
 }
 
 .sa-header-icon {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 13px;
   display: grid;
   place-items: center;
-  background: linear-gradient(150deg, #f9eef2, #f3e2e9);
+  background: linear-gradient(150deg, #fbeef3, #f4dde7);
   color: var(--nv-primary);
+  box-shadow: inset 0 0 0 1px rgba(177, 58, 102, 0.08);
   flex-shrink: 0;
+}
+
+.sa-header-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
 }
 
 .sa-header-title {
   margin: 0;
   font-family: var(--nv-display);
-  font-size: 1.12rem;
+  font-size: 1.18rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
   color: var(--nv-primary-deep);
 }
 
@@ -1316,7 +1326,7 @@ button:focus-visible {
   margin: 2px 0 0;
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--nv-ink-soft);
 }
 
@@ -1328,7 +1338,7 @@ button:focus-visible {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .sa-row {
@@ -1345,29 +1355,31 @@ button:focus-visible {
 .sa-row-user {
   align-items: flex-end;
   align-self: flex-end;
-  max-width: 85%;
+  max-width: 86%;
 }
 
 .sa-bubble {
-  padding: 11px 14px;
-  border-radius: 16px;
+  padding: 12px 15px;
+  border-radius: 18px;
   font-size: 0.9rem;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .sa-bubble-user {
   background: linear-gradient(140deg, #c64a76, var(--nv-primary-deep));
   color: #fff;
-  border-bottom-right-radius: 5px;
-  box-shadow: 0 6px 16px rgba(177, 58, 102, 0.26);
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 6px 16px rgba(177, 58, 102, 0.24);
 }
 
 .sa-bubble-assistant {
+  max-width: 100%;
   background: var(--nv-surface);
   color: var(--nv-ink);
   border: 1px solid var(--nv-line);
-  border-bottom-left-radius: 5px;
+  border-bottom-left-radius: 6px;
   box-shadow: var(--nv-shadow);
 }
 
@@ -1375,29 +1387,58 @@ button:focus-visible {
 
 .sa-cards {
   display: grid;
-  gap: 9px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 12px;
   width: 100%;
 }
 
 .sa-card {
+  position: relative;
   display: flex;
-  gap: 11px;
+  gap: 12px;
   align-items: flex-start;
-  padding: 12px 14px;
+  padding: 13px 15px;
   border-radius: 16px;
   background: var(--nv-surface);
   border: 1px solid var(--nv-line);
   box-shadow: var(--nv-shadow);
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.2s var(--ease-soft),
+    border-color 0.2s var(--ease-soft);
 }
 
+.sa-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--nv-shadow-lift);
+  border-color: rgba(177, 58, 102, 0.26);
+}
+
+/* risk-coloured accent stripe (only on cards that carry a level) */
+.sa-card-low::before,
+.sa-card-moderate::before,
+.sa-card-medium::before,
+.sa-card-high::before,
+.sa-card-critical::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+.sa-card-low::before { background: var(--nv-safe); }
+.sa-card-moderate::before,
+.sa-card-medium::before { background: var(--nv-warn); }
+.sa-card-high::before { background: var(--nv-sos); }
+.sa-card-critical::before { background: var(--nv-critical); }
+
 .sa-card-icon {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 11px;
   display: grid;
   place-items: center;
-  background: linear-gradient(150deg, #f9eef2, #f3e2e9);
+  background: linear-gradient(150deg, #fbeef3, #f4dde7);
   color: var(--nv-primary);
   flex-shrink: 0;
 }
@@ -1405,6 +1446,14 @@ button:focus-visible {
 .sa-card-body {
   flex: 1;
   min-width: 0;
+}
+
+.sa-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 20px;
 }
 
 .sa-card-label {
@@ -1417,32 +1466,30 @@ button:focus-visible {
 }
 
 .sa-card-value {
-  margin-top: 4px;
-  font-size: 0.84rem;
+  margin: 5px 0 0;
+  font-size: 0.86rem;
+  font-weight: 500;
   line-height: 1.45;
   color: var(--nv-ink);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 .sa-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 9px;
+  padding: 3px 9px 3px 8px;
   border-radius: 999px;
-  font-size: 0.66rem;
-  font-weight: 700;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: capitalize;
   flex-shrink: 0;
 }
 
 .sa-badge::before {
   content: "";
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: currentColor;
 }
@@ -1461,6 +1508,7 @@ button:focus-visible {
   gap: 8px;
   color: var(--nv-ink-soft);
   font-size: 0.85rem;
+  font-weight: 500;
   padding: 2px 4px;
 }
 
@@ -1474,7 +1522,7 @@ button:focus-visible {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 0 16px 10px;
+  padding: 4px 16px 12px;
 }
 
 .sa-chip {
@@ -1483,18 +1531,20 @@ button:focus-visible {
   color: var(--nv-primary);
   font-size: 0.74rem;
   font-weight: 600;
-  padding: 8px 12px;
+  padding: 9px 13px;
   border-radius: 999px;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
+  box-shadow: var(--nv-shadow);
   transition: border-color 0.16s var(--ease-soft), background 0.16s var(--ease-soft),
-    transform 0.14s var(--ease-spring);
+    color 0.16s var(--ease-soft), transform 0.14s var(--ease-spring);
 }
 
 .sa-chip:hover {
   border-color: rgba(177, 58, 102, 0.4);
-  background: #fdf8fa;
+  background: linear-gradient(150deg, #fdeef3, #f9e1ea);
+  color: var(--nv-primary-deep);
 }
 
 .sa-chip:active {
@@ -1505,16 +1555,18 @@ button:focus-visible {
 
 .sa-inputbar {
   display: flex;
-  gap: 8px;
-  padding: 14px calc(14px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) 14px;
+  align-items: stretch;
+  gap: 9px;
+  padding: 13px 14px calc(13px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--nv-line);
   background: var(--nv-surface);
 }
 
 .sa-input {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--nv-line);
-  border-radius: 14px;
+  border-radius: 13px;
   padding: 12px 14px;
   font-size: 0.9rem;
   outline: none;
@@ -1536,14 +1588,16 @@ button:focus-visible {
 .sa-send {
   display: grid;
   place-items: center;
+  width: 46px;
+  flex-shrink: 0;
   border: none;
-  border-radius: 14px;
-  padding: 0 16px;
+  border-radius: 13px;
   background: linear-gradient(140deg, #c64a76, var(--nv-primary-deep));
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(177, 58, 102, 0.3);
-  transition: transform 0.16s var(--ease-spring), filter 0.16s var(--ease-soft);
+  box-shadow: 0 8px 18px rgba(177, 58, 102, 0.28);
+  transition: transform 0.16s var(--ease-spring), filter 0.16s var(--ease-soft),
+    opacity 0.16s var(--ease-soft);
 }
 
 .sa-send:hover:not(:disabled) {
@@ -1551,12 +1605,13 @@ button:focus-visible {
 }
 
 .sa-send:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 .sa-send:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1564,7 +1619,8 @@ button:focus-visible {
   .sa-spin {
     animation: none;
   }
-  .sa-chip:hover,
+  .sa-card:hover,
+  .sa-chip:active,
   .sa-send:active:not(:disabled) {
     transform: none;
   }
