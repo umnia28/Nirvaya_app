@@ -11,6 +11,8 @@ import routeRoutes from "./routes/routeRoutes.js";
 import heatmapRoutes from "./routes/heatmapRoutes.js";
 import policeAuthRoutes from "./routes/policeAuthRoutes.js";
 import reportsRouter from "./routes/reportsRoutes.js";
+import assistantRoutes from "./routes/assistant.routes.js";
+
 
 
 import { startLocationCleanupJob } from "./jobs/locationCleanupJob.js";
@@ -100,6 +102,7 @@ app.use("/api/routes", routeRoutes);
 app.use("/api/heatmap", heatmapRoutes);
 app.use("/api/police", policeAuthRoutes);
 app.use("/api/reports", reportsRouter);
+app.use("/api/assistant", assistantRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
