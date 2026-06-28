@@ -1,12 +1,4 @@
-// server/controllers/assistantController.js
-//
-// HYBRID version — robust.
-//   1. Regex parse        -> { origin, destination, hour }   (deterministic, never fails)
-//   2. analyzeRouteSafety -> grounded numbers from your Random Forest
-//   3. Gemini synthesis   -> natural answer, with template fallback if Gemini is down
-//
-// Extraction no longer depends on any LLM, so well-formed questions always work.
-// Needs ORS_API_KEY. GEMINI_API_KEY is optional now (only used to prettify the prose).
+
 
 import { analyzeRouteSafety } from "../services/safetyAssistantService.js";
 
