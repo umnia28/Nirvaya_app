@@ -1,0 +1,100 @@
+
+--no login version
+CREATE TABLE anonymous_devices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sos_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  device_id TEXT NOT NULL REFERENCES anonymous_devices(device_id) ON DELETE CASCADE,
+
+  trigger_type TEXT NOT NULL
+    CHECK (trigger_type IN ('button', 'voice')),
+
+  latitude NUMERIC(9,6) NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude NUMERIC(9,6) NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+
+  risk_score NUMERIC(5,2) CHECK (risk_score BETWEEN 0 AND 100),
+
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'resolved', 'false_alarm')),
+
+  public_token TEXT UNIQUE NOT NULL,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ,
+
+  CHECK (
+    status = 'active' OR resolved_at IS NOT NULL
+  )
+);
+CREATE TABLE sos_location_updates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sos_alert_id UUID NOT NULL REFERENCES sos_alerts(id) ON DELETE CASCADE,
+  latitude NUMERIC(9,6) NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude NUMERIC(9,6) NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE police_stations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  district TEXT NOT NULL,
+  thana TEXT NOT NULL,
+  address TEXT,
+  latitude NUMERIC(9,6) NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude NUMERIC(9,6) NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  phone TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS user_location_updates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  device_id TEXT NOT NULL REFERENCES anonymous_devices(device_id) ON DELETE CASCADE,
+
+  latitude NUMERIC(9,6) NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude NUMERIC(9,6) NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+
+  risk_score NUMERIC(5,2) CHECK (risk_score BETWEEN 0 AND 100),
+  risk_level TEXT CHECK (risk_level IN ('low', 'medium', 'high', 'critical')),
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
+CREATE TABLE IF NOT EXISTS user_reports (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id   TEXT NOT NULL
+                REFERENCES anonymous_devices(device_id) ON DELETE CASCADE,
+  category    TEXT NOT NULL CHECK (category IN (
+                'stalking',
+                'eve_teasing',
+                'suspicious_person',
+                'snatching',
+                'poor_lighting',
+                'other'
+              )),
+  description TEXT CHECK (description IS NULL OR char_length(description) <= 500),
+  latitude    NUMERIC(9,6) NOT NULL CHECK (latitude  BETWEEN -90  AND 90),
+  longitude   NUMERIC(9,6) NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  district    TEXT DEFAULT 'Dhaka',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Bounding-box lookups for the heatmap / "reports near me"
+CREATE INDEX IF NOT EXISTS idx_user_reports_lat_lng
+  ON user_reports (latitude, longitude);
+
+-- Analytics / risk-model retraining (by area + type)
+CREATE INDEX IF NOT EXISTS idx_user_reports_district_category
+  ON user_reports (district, category);
+
+-- Recent-first queries
+CREATE INDEX IF NOT EXISTS idx_user_reports_created_at
+  ON user_reports (created_at DESC);
+
+
